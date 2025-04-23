@@ -10,6 +10,7 @@ use miden_client::transaction::TransactionRequestBuilder;
 use crate::commands::new_transactions::execute_transaction;
 use crate::errors::CliError;
 use crate::utils::{bridge_note_tag, get_input_acc_id_by_prefix_or_default};
+use crate::utils::get_input_acc_id_by_prefix_or_default;
 
 // ACCOUNT COMMAND
 // ================================================================================================
@@ -49,7 +50,7 @@ impl CrosschainCmd {
             .map_err(|e| CliError::AccountId(e, "Malformed Faucet account id hex".to_string()))?;
 
         let evm_dest_address = Address::from_hex(self.dest_addr.as_str())
-            .map_err(|_e| CliError::Input(format!("Non evm address hex {:?}", self.dest_addr)))?;
+            .map_err(|e| CliError::Input(format!("Non evm address hex {:?}", self.dest_addr)))?;
 
         let sender = get_input_acc_id_by_prefix_or_default(&client, self.sender.clone()).await?;
 
