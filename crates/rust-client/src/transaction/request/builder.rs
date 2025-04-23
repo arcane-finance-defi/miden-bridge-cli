@@ -45,6 +45,8 @@ pub struct TransactionRequestBuilder {
     expected_future_notes: BTreeMap<NoteId, (NoteDetails, NoteTag)>,
     /// Custom transaction script to be used.
     custom_script: Option<TransactionScript>,
+    /// User prefer empty script instead of default
+    empty_script: bool,
     /// Initial state of the `AdviceMap` that provides data during runtime.
     advice_map: AdviceMap,
     /// Initial state of the `MerkleStore` that provides data during runtime.
@@ -75,6 +77,7 @@ impl TransactionRequestBuilder {
             expected_output_notes: BTreeMap::new(),
             expected_future_notes: BTreeMap::new(),
             custom_script: None,
+            empty_script: false,
             advice_map: AdviceMap::default(),
             merkle_store: MerkleStore::default(),
             expiration_delta: None,
@@ -134,6 +137,13 @@ impl TransactionRequestBuilder {
     #[must_use]
     pub fn with_custom_script(mut self, script: TransactionScript) -> Self {
         self.custom_script = Some(script);
+        self
+    }
+
+    /// Specifies empty script flag value
+    #[must_use]
+    pub fn with_empty_script(mut self, empty: bool) -> Self {
+        self.empty_script = empty;
         self
     }
 
@@ -366,13 +376,13 @@ impl TransactionRequestBuilder {
     /// - If an expiration delta is set when a custom script is set.
     /// - If an invalid note variant is encountered in the own output notes.
     pub fn build(self) -> Result<TransactionRequest, TransactionRequestError> {
-        let script_template = match (self.custom_script, self.own_output_notes.is_empty()) {
-            (Some(_), false) => {
+        let script_template = match (self.custom_script, self.own_output_notes.is_empty(), self.empty_script) {
+            (Some(_), false, false) => {
                 return Err(TransactionRequestError::ScriptTemplateError(
                     "Cannot set both a custom script and own output notes".to_string(),
                 ));
             },
-            (Some(script), true) => {
+            (Some(script), true, false) => {
                 if self.expiration_delta.is_some() {
                     return Err(TransactionRequestError::ScriptTemplateError(
                         "Cannot set expiration delta when a custom script is set".to_string(),
@@ -381,7 +391,7 @@ impl TransactionRequestBuilder {
 
                 Some(TransactionScriptTemplate::CustomScript(script))
             },
-            (None, false) => {
+            (None, false, false) => {
                 let partial_notes = self
                     .own_output_notes
                     .into_iter()
@@ -394,7 +404,8 @@ impl TransactionRequestBuilder {
 
                 Some(TransactionScriptTemplate::SendNotes(partial_notes))
             },
-            (None, true) => None,
+            (None, true, false) => None,
+            (_, _, true) => None
         };
 
         Ok(TransactionRequest {
