@@ -23,6 +23,9 @@ use commands::{
     sync::SyncCmd,
     tags::TagsCmd,
     transactions::TransactionCmd,
+    recipient::RecipientCmd,
+    reconstruct::ReconstructCmd,
+    crosschain::CrosschainCmd
 };
 use crate::utils::bridge_note_tag;
 use self::utils::load_config_file;

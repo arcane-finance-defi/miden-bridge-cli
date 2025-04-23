@@ -46,6 +46,8 @@ pub struct RecipientCmd {
 impl RecipientCmd {
     pub async fn execute(&self, mut client: Client) -> Result<(), CliError> {
         let rng = client.rng();
+        let receiver = AccountId::from_hex(&self.account_id)
+            .map_err(|e| CliError::AccountId(e, "Malformed Account id hex".to_string()))?;
         let serial_number = rng.draw_word();
         let serial_number_hex = word_to_hex(&serial_number)
             .map_err(|e| CliError::Internal(Box::new(e)))?;
