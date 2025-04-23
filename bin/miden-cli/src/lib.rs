@@ -25,8 +25,10 @@ use commands::{
     sync::SyncCmd,
     tags::TagsCmd,
     transactions::TransactionCmd,
+    recipient::RecipientCmd,
+    reconstruct::ReconstructCmd,
+    crosschain::CrosschainCmd
 };
-
 use self::utils::load_config_file;
 
 pub type CliKeyStore = FilesystemKeyStore<StdRng>;
@@ -36,6 +38,7 @@ mod errors;
 mod faucet_details_map;
 mod info;
 mod utils;
+mod public_notes;
 
 /// Config file name.
 const CLIENT_CONFIG_FILE_NAME: &str = "miden-client.toml";
@@ -77,6 +80,9 @@ pub enum Command {
     Swap(SwapCmd),
     ConsumeNotes(ConsumeNotesCmd),
     Exec(ExecCmd),
+    Recipient(RecipientCmd),
+    Reconstruct(ReconstructCmd),
+    Crosschain(CrosschainCmd),
 }
 
 /// CLI entry point.
@@ -143,6 +149,9 @@ impl Cli {
             Command::Send(send) => send.execute(client).await,
             Command::Swap(swap) => swap.execute(client).await,
             Command::ConsumeNotes(consume_notes) => consume_notes.execute(client).await,
+            Command::Recipient(recipient) => recipient.execute(client).await,
+            Command::Reconstruct(reconstruct) => reconstruct.execute(client).await,
+            Command::Crosschain(crosschain) => crosschain.execute(client).await,
         }
     }
 }
