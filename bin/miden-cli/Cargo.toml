@@ -25,9 +25,11 @@ miden-client = { features = ["sqlite", "tonic"], path = "../../crates/rust-clien
 
 # Miden dependencies
 miden-lib     = { workspace = true }
+miden-bridge = { git = "ssh://git@github.com/arcane-finance-defi/miden-bridge-mono.git", version = "0.1.0", features = ["std", "async"] }
 miden-objects = { workspace = true }
 
 # External dependencies
+alloy-primitives = "1.0.0"
 clap               = { features = ["derive"], version = "4.5" }
 comfy-table        = { version = "7.1" }
 figment            = { features = ["env", "toml"], version = "0.10" }

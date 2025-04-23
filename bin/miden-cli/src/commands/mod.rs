@@ -9,3 +9,6 @@ pub mod notes;
 pub mod sync;
 pub mod tags;
 pub mod transactions;
+pub mod crosschain;
+pub mod recipient;
+pub mod reconstruct;

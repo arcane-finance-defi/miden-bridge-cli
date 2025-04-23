@@ -33,6 +33,7 @@ use crate::utils::{
     load_faucet_details_map,
     parse_account_id,
 };
+use crate::public_notes::{get_public_bridge_output_note, is_crosschain_note};
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum NoteType {
@@ -312,11 +313,19 @@ impl ConsumeNotesCmd {
 
         let mut authenticated_notes = Vec::new();
         let mut unauthenticated_notes = Vec::new();
+        let mut output_notes = Vec::new();
 
         for note_id in &self.list_of_notes {
             let note_record = get_input_note_with_id_prefix(&client, note_id)
                 .await
                 .map_err(|_| CliError::Input(format!("Input note ID {note_id} is neither a valid Note ID nor a prefix of a known Note ID")))?;
+
+            if is_crosschain_note(note_record.clone()) {
+                output_notes.push(
+                    get_public_bridge_output_note(note_record.clone())
+                        .map_err(|e| CliError::Internal(Box::new(e)))?
+                );
+            }
 
             if note_record.is_authenticated() {
                 authenticated_notes.push(note_record.id());
@@ -353,6 +362,8 @@ impl ConsumeNotesCmd {
         let transaction_request = TransactionRequestBuilder::new()
             .authenticated_input_notes(authenticated_notes.into_iter().map(|id| (id, None)))
             .unauthenticated_input_notes(unauthenticated_notes)
+            .own_output_notes(output_notes.clone())
+            .with_empty_script(!output_notes.is_empty())
             .build()
             .map_err(|err| {
                 CliError::Transaction(
