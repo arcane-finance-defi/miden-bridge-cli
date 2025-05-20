@@ -2,14 +2,19 @@ use std::io;
 use std::sync::Arc;
 
 use clap::{Parser, ValueEnum};
-use miden_client::account::AccountId;
-use miden_client::asset::{FungibleAsset, NonFungibleDeltaAction};
-use miden_client::auth::TransactionAuthenticator;
-use miden_client::note::{
-    BlockNumber,
-    NoteType as MidenNoteType,
-    build_swap_tag,
-    get_input_note_with_id_prefix,
+use miden_bridge::accounts::components::token_wrapper_account_library;
+use miden_client::{
+    Client, RemoteTransactionProver,
+    account::AccountId,
+    auth::TransactionAuthenticator,
+    asset::{FungibleAsset, NonFungibleDeltaAction},
+    crypto::Digest,
+    note::{BlockNumber, NoteType as MidenNoteType, build_swap_tag, get_input_note_with_id_prefix},
+    store::NoteRecordError,
+    transaction::{
+        InputNote, OutputNote, PaymentNoteDescription, SwapTransactionData, TransactionRequest,
+        TransactionRequestBuilder, TransactionResult,
+    },
 };
 use miden_client::store::NoteRecordError;
 use miden_client::transaction::{
@@ -341,7 +346,6 @@ impl ConsumeNotesCmd {
                 ));
             }
         }
-
         let account_id =
             get_input_acc_id_by_prefix_or_default(&client, self.account_id.clone()).await?;
 

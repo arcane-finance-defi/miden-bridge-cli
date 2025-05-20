@@ -50,6 +50,7 @@ pub enum TransactionScriptTemplate {
     /// depend on the capabilities of the account the transaction request will be applied to.
     /// For example, for Basic Wallets, this may involve invoking `create_note` procedure.
     SendNotes(Vec<PartialNote>),
+    NoAuth
 }
 
 /// Specifies a transaction request that can be executed by an account.
@@ -320,15 +321,16 @@ impl TransactionRequest {
         &self,
         account_interface: &AccountInterface,
         in_debug_mode: DebugMode,
-    ) -> Result<TransactionScript, TransactionRequestError> {
+    ) -> Result<Option<TransactionScript>, TransactionRequestError> {
         match &self.script_template {
-            Some(TransactionScriptTemplate::CustomScript(script)) => Ok(script.clone()),
-            Some(TransactionScriptTemplate::SendNotes(notes)) => Ok(account_interface
-                .build_send_notes_script(notes, self.expiration_delta, in_debug_mode.into())?),
+            Some(TransactionScriptTemplate::CustomScript(script)) => Ok(Some(script.clone())),
+            Some(TransactionScriptTemplate::SendNotes(notes)) => Ok(Some(account_interface
+                .build_send_notes_script(notes, self.expiration_delta, in_debug_mode.into())?)),
+            Some(TransactionScriptTemplate::NoAuth) => Ok(None),
             None => {
                 let empty_script = ScriptBuilder::new(true).compile_tx_script("begin nop end")?;
 
-                Ok(empty_script)
+                Ok(Some(empty_script))
             },
         }
     }
@@ -351,6 +353,9 @@ impl Serializable for TransactionRequest {
                 target.write_u8(2);
                 notes.write_into(target);
             },
+            Some(TransactionScriptTemplate::NoAuth) => {
+                target.write_u8(3);
+            }
         }
         self.expected_output_recipients.write_into(target);
         self.expected_future_notes.write_into(target);
@@ -379,6 +384,7 @@ impl Deserializable for TransactionRequest {
                 let notes = Vec::<PartialNote>::read_from(source)?;
                 Some(TransactionScriptTemplate::SendNotes(notes))
             },
+            3 => Some(TransactionScriptTemplate::NoAuth),
             _ => {
                 return Err(DeserializationError::InvalidValue(
                     "Invalid script template type".to_string(),
