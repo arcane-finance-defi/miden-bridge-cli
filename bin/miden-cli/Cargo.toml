@@ -13,7 +13,7 @@ rust-version.workspace = true
 version                = "0.10.0"
 
 [[bin]]
-name = "miden-client"
+name = "miden-bridge"
 path = "src/main.rs"
 
 [features]
