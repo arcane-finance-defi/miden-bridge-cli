@@ -50,7 +50,7 @@ impl CrosschainCmd {
             .map_err(|e| CliError::AccountId(e, "Malformed Faucet account id hex".to_string()))?;
 
         let evm_dest_address = Address::from_hex(self.dest_addr.as_str())
-            .map_err(|e| CliError::Input(format!("Non evm address hex {:?}", self.dest_addr)))?;
+            .map_err(|_e| CliError::Input(format!("Non evm address hex {:?}", self.dest_addr)))?;
 
         let sender = get_input_acc_id_by_prefix_or_default(&client, self.sender.clone()).await?;
 

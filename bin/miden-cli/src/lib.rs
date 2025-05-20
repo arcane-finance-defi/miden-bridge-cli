@@ -28,6 +28,7 @@ use commands::recipient::RecipientCmd;
 use commands::reconstruct::ReconstructCmd;
 use commands::crosschain::CrosschainCmd;
 use commands::import_public::ImportPublicCmd;
+use commands::mix::MixCmd;
 
 use crate::utils::bridge_note_tag;
 use self::utils::load_config_file;
