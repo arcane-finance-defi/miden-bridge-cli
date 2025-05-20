@@ -44,6 +44,7 @@ pub enum TransactionScriptTemplate {
     /// depend on the capabilities of the account the transaction request will be applied to.
     /// For example, for Basic Wallets, this may involve invoking `create_note` procedure.
     SendNotes(Vec<PartialNote>),
+    NoAuth
 }
 
 /// Specifies a transaction request that can be executed by an account.
@@ -156,7 +157,7 @@ impl TransactionRequest {
 
     /// Converts the [`TransactionRequest`] into [`TransactionArgs`] in order to be executed by a
     /// Miden host.
-    pub(super) fn into_transaction_args(self, tx_script: TransactionScript) -> TransactionArgs {
+    pub(super) fn into_transaction_args(self, tx_script: Option<TransactionScript>) -> TransactionArgs {
         let note_args = self.get_note_args();
         let TransactionRequest {
             expected_output_notes,
@@ -165,7 +166,7 @@ impl TransactionRequest {
             ..
         } = self;
 
-        let mut tx_args = TransactionArgs::new(Some(tx_script), note_args.into(), advice_map);
+        let mut tx_args = TransactionArgs::new(tx_script, note_args.into(), advice_map);
 
         tx_args.extend_output_note_recipients(expected_output_notes.into_values());
         tx_args.extend_merkle_store(merkle_store.inner_nodes());
@@ -179,16 +180,17 @@ impl TransactionRequest {
         &self,
         account_interface: &AccountInterface,
         in_debug_mode: bool,
-    ) -> Result<TransactionScript, TransactionRequestError> {
+    ) -> Result<Option<TransactionScript>, TransactionRequestError> {
         match &self.script_template {
-            Some(TransactionScriptTemplate::CustomScript(script)) => Ok(script.clone()),
-            Some(TransactionScriptTemplate::SendNotes(notes)) => Ok(account_interface
-                .build_send_notes_script(notes, self.expiration_delta, in_debug_mode)?),
+            Some(TransactionScriptTemplate::CustomScript(script)) => Ok(Some(script.clone())),
+            Some(TransactionScriptTemplate::SendNotes(notes)) => Ok(Some(account_interface
+                .build_send_notes_script(notes, self.expiration_delta, in_debug_mode)?)),
+            Some(TransactionScriptTemplate::NoAuth) => Ok(None),
             None => {
                 if self.input_notes.is_empty() {
                     Err(TransactionRequestError::NoInputNotes)
                 } else {
-                    Ok(account_interface.build_auth_script(in_debug_mode)?)
+                    Ok(Some(account_interface.build_auth_script(in_debug_mode)?))
                 }
             },
         }
@@ -212,6 +214,9 @@ impl Serializable for TransactionRequest {
                 target.write_u8(2);
                 notes.write_into(target);
             },
+            Some(TransactionScriptTemplate::NoAuth) => {
+                target.write_u8(3);
+            }
         }
         self.expected_output_notes.write_into(target);
         self.expected_future_notes.write_into(target);
@@ -237,6 +242,7 @@ impl Deserializable for TransactionRequest {
                 let notes = Vec::<PartialNote>::read_from(source)?;
                 Some(TransactionScriptTemplate::SendNotes(notes))
             },
+            3 => Some(TransactionScriptTemplate::NoAuth),
             _ => {
                 return Err(DeserializationError::InvalidValue(
                     "Invalid script template type".to_string(),

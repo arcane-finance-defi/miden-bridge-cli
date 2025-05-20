@@ -1,6 +1,7 @@
 use std::{io, sync::Arc};
 
 use clap::{Parser, ValueEnum};
+use miden_bridge::accounts::components::token_wrapper_account_library;
 use miden_client::{
     Client, RemoteTransactionProver,
     account::AccountId,
@@ -302,7 +303,6 @@ impl ConsumeNotesCmd {
                 ));
             }
         }
-
         let account_id =
             get_input_acc_id_by_prefix_or_default(&client, self.account_id.clone()).await?;
 
