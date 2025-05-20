@@ -265,7 +265,7 @@ impl TransactionRequest {
     /// Miden host.
     pub(crate) fn into_transaction_args(
         self,
-        tx_script: TransactionScript,
+        tx_script: Option<TransactionScript>,
         foreign_account_inputs: Vec<AccountInputs>,
     ) -> TransactionArgs {
         let note_args = self.get_note_args();
@@ -298,7 +298,7 @@ impl TransactionRequest {
         &self,
         account_interface: &AccountInterface,
         in_debug_mode: bool,
-    ) -> Result<TransactionScript, TransactionRequestError> {
+    ) -> Result<Option<TransactionScript>, TransactionRequestError> {
         match &self.script_template {
             Some(TransactionScriptTemplate::CustomScript(script)) => Ok(script.clone()),
             Some(TransactionScriptTemplate::SendNotes(notes)) => Ok(account_interface
