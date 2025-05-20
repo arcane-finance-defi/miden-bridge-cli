@@ -27,7 +27,8 @@ use commands::{
     transactions::TransactionCmd,
     recipient::RecipientCmd,
     reconstruct::ReconstructCmd,
-    crosschain::CrosschainCmd
+    crosschain::CrosschainCmd,
+    import_public::ImportPublicCmd
 };
 use self::utils::load_config_file;
 
@@ -39,6 +40,7 @@ mod faucet_details_map;
 mod info;
 mod utils;
 mod public_notes;
+mod crosschain;
 
 /// Config file name.
 const CLIENT_CONFIG_FILE_NAME: &str = "miden-client.toml";
@@ -70,6 +72,7 @@ pub enum Command {
     NewAccount(NewAccountCmd),
     NewWallet(NewWalletCmd),
     Import(ImportCmd),
+    ImportPublic(ImportPublicCmd),
     Export(ExportCmd),
     Init(InitCmd),
     Notes(NotesCmd),
@@ -143,6 +146,7 @@ impl Cli {
             Command::NewWallet(new_wallet) => new_wallet.execute(client, keystore).await,
             Command::NewAccount(new_account) => new_account.execute(client, keystore).await,
             Command::Import(import) => import.execute(client, keystore).await,
+            Command::ImportPublic(import_public) => import_public.execute(client, keystore).await,
             Command::Init(_) => Ok(()),
             Command::Info => info::print_client_info(&client).await,
             Command::Notes(notes) => notes.execute(client).await,
