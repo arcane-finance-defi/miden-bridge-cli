@@ -407,7 +407,7 @@ impl TransactionRequestBuilder {
                 Some(TransactionScriptTemplate::SendNotes(partial_notes))
             },
             (None, true, false) => None,
-            (_, _, true) => None
+            (_, _, true) => Some(TransactionScriptTemplate::NoAuth)
         };
 
         Ok(TransactionRequest {
