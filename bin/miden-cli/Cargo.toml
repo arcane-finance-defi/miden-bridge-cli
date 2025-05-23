@@ -27,7 +27,7 @@ miden-client = { features = ["sqlite", "tonic"], path = "../../crates/rust-clien
 miden-lib     = { workspace = true }
 miden-bridge = { git = "ssh://git@github.com/arcane-finance-defi/miden-bridge-mono.git", version = "0.1.0", features = ["std", "async"] }
 miden-client = { version = "0.9", path = "../../crates/rust-client", features = ["sqlite", "tonic"] }
-miden-bridge = { git = "ssh://git@github.com/arcane-finance-defi/miden-bridge-mono.git", version = "0.1.0", features = ["std", "async"] }
+miden-bridge = { git = "ssh://git@github.com/arcane-finance-defi/miden-bridge-mono.git", version = "0.1.0", features = ["std", "async"], branch = "fix/deps-version-09" }
 miden-lib = { workspace = true }
 miden-objects = { workspace = true }
 
