@@ -101,6 +101,7 @@
 //!     .unwrap(),
 //!     tx_graceful_blocks,
 //!     max_block_number_delta,
+//!     "http://localhost:8001".to_string()
 //! )
 //! .await
 //! .unwrap();
@@ -140,7 +141,7 @@ mod test_utils;
 pub mod tests;
 
 mod errors;
-
+pub mod consts;
 // RE-EXPORTS
 // ================================================================================================
 
@@ -193,6 +194,7 @@ pub mod block {
 pub mod crypto {
     pub use miden_objects::crypto::dsa::rpo_falcon512::SecretKey;
     pub use miden_objects::crypto::hash::rpo::Rpo256;
+    pub use miden_objects::Digest;
     pub use miden_objects::crypto::merkle::{
         InOrderIndex,
         LeafIndex,
@@ -233,11 +235,11 @@ use miden_objects::block::BlockNumber;
 use miden_objects::crypto::rand::FeltRng;
 use miden_objects::note::{NoteId, NoteInclusionProof};
 use miden_tx::{
-    DataStore, LocalTransactionProver, TransactionExecutor, auth::TransactionAuthenticator,
+    auth::TransactionAuthenticator, DataStore, LocalTransactionProver, TransactionExecutor,
 };
 use rand::RngCore;
 use rpc::NodeRpcClient;
-use store::{Store, data_store::ClientDataStore};
+use store::{data_store::ClientDataStore, Store};
 use tracing::info;
 use crate::rpc::domain::note::FetchedNote;
 use crate::rpc::RpcError;
@@ -273,6 +275,8 @@ pub struct Client<AUTH> {
     /// Maximum number of blocks the client can be behind the network for transactions and account
     /// proofs to be considered valid.
     max_block_number_delta: Option<u32>,
+    /// Mixer operator url
+    mixer_url: alloc::string::String
 }
 
 /// Construction and access methods.
@@ -313,6 +317,7 @@ where
         exec_options: ExecutionOptions,
         tx_graceful_blocks: Option<u32>,
         max_block_number_delta: Option<u32>,
+        mixer_url: alloc::string::String
     ) -> Result<Self, ClientError> {
         let tx_prover = Arc::new(LocalTransactionProver::default());
 
@@ -330,6 +335,7 @@ where
             exec_options,
             tx_graceful_blocks,
             max_block_number_delta,
+            mixer_url
         })
     }
 
@@ -360,6 +366,10 @@ where
     #[cfg(any(test, feature = "testing"))]
     pub fn test_store(&mut self) -> &mut Arc<dyn Store> {
         &mut self.store
+    }
+
+    pub fn mixer_url(&self) -> alloc::string::String {
+        self.mixer_url.clone()
     }
 
     pub async fn get_note_inclusion_proof(&self, note_id: NoteId) -> Result<Option<NoteInclusionProof>, ClientError> {

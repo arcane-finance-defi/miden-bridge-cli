@@ -41,6 +41,7 @@ tokio              = { workspace = true }
 toml               = { version = "0.8" }
 tracing            = { workspace = true }
 tracing-subscriber = { version = "0.3" }
+reqwest = { version = "0.12", features = ["json"] }
 
 [build-dependencies]
 miden-client  = { path = "../../crates/rust-client", version = "0.11" }

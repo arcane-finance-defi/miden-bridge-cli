@@ -11,7 +11,7 @@ use miden_client::builder::ClientBuilder;
 use miden_client::keystore::FilesystemKeyStore;
 use miden_client::store::{NoteFilter as ClientNoteFilter, OutputNoteRecord};
 use miden_client::{Client, DebugMode, IdPrefixFetchError};
-use rand::rngs::StdRng;
+use rand::{Rng, rngs::StdRng};
 mod commands;
 use commands::account::AccountCmd;
 use commands::exec::ExecCmd;
@@ -154,6 +154,7 @@ pub enum Command {
     Recipient(RecipientCmd),
     Reconstruct(ReconstructCmd),
     Crosschain(CrosschainCmd),
+    Mix(MixCmd),
 }
 
 /// CLI entry point.
@@ -225,6 +226,7 @@ impl Cli {
             Command::Recipient(recipient) => recipient.execute(client).await,
             Command::Reconstruct(reconstruct) => reconstruct.execute(&mut client).await,
             Command::Crosschain(crosschain) => crosschain.execute(client).await,
+            Command::Mix(mix) => mix.execute(client).await,
         }
     }
 

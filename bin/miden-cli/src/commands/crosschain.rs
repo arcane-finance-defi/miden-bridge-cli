@@ -3,12 +3,13 @@ use miden_client::{Client, account::AccountId, Felt};
 use alloy_primitives::{Address, hex::FromHex};
 use miden_objects::StarkField;
 use miden_bridge::notes::crosschain::new_crosschain_note;
+use miden_objects::note::NoteTag;
 use miden_objects::transaction::OutputNote;
 use miden_client::crypto::FeltRng;
 use miden_client::transaction::TransactionRequestBuilder;
 use crate::commands::new_transactions::execute_transaction;
 use crate::errors::CliError;
-use crate::utils::get_input_acc_id_by_prefix_or_default;
+use crate::utils::{bridge_note_tag, get_input_acc_id_by_prefix_or_default};
 
 // ACCOUNT COMMAND
 // ================================================================================================
@@ -37,6 +38,9 @@ pub struct CrosschainCmd {
     /// account to the provided ID.
     #[clap(short, long, value_name = "ID")]
     sender: Option<String>,
+
+    #[clap(short, long)]
+    tag: Option<u32>,
 }
 
 impl CrosschainCmd {
@@ -70,11 +74,12 @@ impl CrosschainCmd {
             address_felts,
             faucet_id,
             self.asset_amount,
-            sender
+            sender,
+            self.tag.map(NoteTag::from).unwrap_or(bridge_note_tag())
         ).map_err(|e| CliError::Internal(Box::new(e)))?;
 
         let tx_request = TransactionRequestBuilder::new()
-            .with_own_output_notes(vec![OutputNote::Full(note)])
+            .own_output_notes(vec![OutputNote::Full(note)])
             .build().map_err(|e| CliError::Internal(Box::new(e)))?;
 
         execute_transaction(

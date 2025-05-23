@@ -1,11 +1,10 @@
-use std::fs::File;
-use std::io::Write;
-use std::path::{Path, PathBuf};
-
+use std::{fmt, fs::File, io::Write, path::{Path, PathBuf}};
 use figment::{
     Figment,
     providers::{Format, Toml},
 };
+use miden_objects::{Felt, StarkField};
+use thiserror::Error;
 use miden_objects::note::NoteTag;
 use miden_client::{Client, account::AccountId};
 use miden_objects::address::Address;
@@ -126,3 +125,4 @@ pub fn load_faucet_details_map() -> Result<FaucetDetailsMap, CliError> {
     let (config, _) = load_config_file()?;
     FaucetDetailsMap::new(config.token_symbol_map_filepath)
 }
+

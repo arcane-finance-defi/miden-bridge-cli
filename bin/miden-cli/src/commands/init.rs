@@ -5,9 +5,12 @@ use std::path::PathBuf;
 use clap::Parser;
 use tracing::info;
 
-use crate::CLIENT_CONFIG_FILE_NAME;
-use crate::config::{CliConfig, CliEndpoint, Network};
-use crate::errors::CliError;
+use crate::{
+    CLIENT_CONFIG_FILE_NAME,
+    config::{CliConfig, CliEndpoint, Network},
+    errors::CliError,
+};
+use miden_client::consts::MIXER_DEFAULT_URL;
 
 /// Contains the account component template file generated on build.rs, corresponding to the basic
 /// wallet component.
@@ -99,6 +102,8 @@ impl InitCmd {
         file_handle.write(config_as_toml_string.as_bytes()).map_err(|err| {
             CliError::Config("failed to write config file".to_string().into(), err.to_string())
         })?;
+
+        cli_config.mixer_url = MIXER_DEFAULT_URL.try_into().unwrap();
 
         println!("Config file successfully created at: {}", config_file_path.display());
 
