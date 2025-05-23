@@ -1,8 +1,8 @@
 use alloc::{
+    boxed::Box,
     string::{String, ToString},
     sync::Arc,
 };
-use std::boxed::Box;
 
 use miden_objects::{
     Felt,
@@ -16,6 +16,7 @@ use crate::rpc::{Endpoint, TonicRpcClient};
 #[cfg(feature = "sqlite")]
 use crate::store::sqlite_store::SqliteStore;
 use crate::{Client, ClientError, keystore::FilesystemKeyStore, rpc::NodeRpcClient, store::Store};
+use crate::consts::MIXER_DEFAULT_URL;
 
 // CONSTANTS
 // ================================================================================================
@@ -237,6 +238,7 @@ impl ClientBuilder {
             arc_store,
             authenticator,
             self.in_debug_mode,
+            MIXER_DEFAULT_URL.try_into().unwrap(),
             self.tx_graceful_blocks,
             self.max_block_number_delta,
         ))

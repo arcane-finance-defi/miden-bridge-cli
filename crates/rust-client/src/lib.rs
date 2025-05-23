@@ -91,6 +91,7 @@
 //!     store,
 //!     Arc::new(keystore),
 //!     false, // Set to true for debug mode, if needed.
+//!     "http://localhost:8000".to_string(),
 //!     tx_graceful_blocks,
 //!     max_block_number_delta,
 //! );
@@ -106,7 +107,7 @@
 
 #[macro_use]
 extern crate alloc;
-use alloc::boxed::Box;
+use alloc::{boxed::Box, string::String};
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -129,7 +130,7 @@ mod test_utils;
 pub mod tests;
 
 mod errors;
-
+pub mod consts;
 // RE-EXPORTS
 // ================================================================================================
 
@@ -174,16 +175,16 @@ pub mod crypto {
 }
 
 pub use errors::{AuthenticationError, ClientError, IdPrefixFetchError};
-pub use miden_objects::{Felt, ONE, StarkField, Word, ZERO};
+pub use miden_objects::{Felt, StarkField, Word, ONE, ZERO};
 pub use miden_proving_service_client::proving_service::tx_prover::RemoteTransactionProver;
 
 /// Provides various utilities that are commonly used throughout the Miden
 /// client library.
 pub mod utils {
     pub use miden_tx::utils::{
-        ByteReader, ByteWriter, Deserializable, DeserializationError, Serializable,
-        bytes_to_hex_string,
-        sync::{LazyLock, RwLock, RwLockReadGuard, RwLockWriteGuard},
+        bytes_to_hex_string, sync::{LazyLock, RwLock, RwLockReadGuard, RwLockWriteGuard}, ByteReader, ByteWriter, Deserializable,
+        DeserializationError,
+        Serializable,
     };
 }
 
@@ -198,18 +199,17 @@ pub mod testing {
 }
 
 use alloc::sync::Arc;
-
 use miden_objects::crypto::rand::FeltRng;
 use miden_objects::note::{NoteId, NoteInclusionProof};
 use miden_tx::{
-    LocalTransactionProver, TransactionExecutor, TransactionMastStore,
+    DataStore, LocalTransactionProver, TransactionExecutor, TransactionMastStore,
     auth::TransactionAuthenticator,
 };
 use rand::RngCore;
 use rpc::NodeRpcClient;
-use store::{Store, data_store::ClientDataStore};
+use store::{data_store::ClientDataStore, Store};
 use tracing::info;
-use crate::rpc::domain::note::NetworkNote;
+use crate::rpc::domain::note::FetchedNote;
 use crate::rpc::RpcError;
 // MIDEN CLIENT
 // ================================================================================================
@@ -244,6 +244,8 @@ pub struct Client {
     /// Maximum number of blocks the client can be behind the network for transactions and account
     /// proofs to be considered valid.
     max_block_number_delta: Option<u32>,
+    /// Mixer operator url
+    mixer_url: String
 }
 
 /// Construction and access methods.
@@ -281,6 +283,7 @@ impl Client {
         store: Arc<dyn Store>,
         authenticator: Arc<dyn TransactionAuthenticator>,
         in_debug_mode: bool,
+        mixer_url: String,
         tx_graceful_blocks: Option<u32>,
         max_block_number_delta: Option<u32>,
     ) -> Self {
@@ -303,6 +306,7 @@ impl Client {
             tx_prover,
             tx_executor,
             in_debug_mode,
+            mixer_url,
             tx_graceful_blocks,
             max_block_number_delta,
             mast_store,
@@ -333,12 +337,16 @@ impl Client {
         &mut self.store
     }
 
+    pub fn mixer_url(&self) -> String {
+        self.mixer_url.clone()
+    }
+
     pub async fn get_note_inclusion_proof(&self, note_id: NoteId) -> Result<Option<NoteInclusionProof>, ClientError> {
         let result = self.rpc_api.get_note_by_id(note_id).await;
 
         match result {
-            Ok(NetworkNote::Private(_, _, proof)) => Ok(Some(proof)),
-            Ok(NetworkNote::Public(_, proof)) => Ok(Some(proof)),
+            Ok(FetchedNote::Private(_, _, proof)) => Ok(Some(proof)),
+            Ok(FetchedNote::Public(_, proof)) => Ok(Some(proof)),
             Err(RpcError::NoteNotFound(_)) => Ok(None),
             Err(err) => Err(ClientError::RpcError(err))
         }
