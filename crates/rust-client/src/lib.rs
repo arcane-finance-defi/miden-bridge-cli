@@ -120,7 +120,7 @@ pub mod mock;
 pub mod tests;
 
 mod errors;
-
+pub mod consts;
 // RE-EXPORTS
 // ================================================================================================
 
@@ -152,7 +152,6 @@ pub mod block {
 /// the `miden_objects` crate.
 pub mod crypto {
     pub use miden_objects::{
-        Digest,
         crypto::{
             dsa::rpo_falcon512::SecretKey,
             merkle::{
@@ -161,20 +160,21 @@ pub mod crypto {
             },
             rand::{FeltRng, RpoRandomCoin},
         },
+        Digest,
     };
 }
 
 pub use errors::{AuthenticationError, ClientError, IdPrefixFetchError};
-pub use miden_objects::{Felt, ONE, StarkField, Word, ZERO};
+pub use miden_objects::{Felt, StarkField, Word, ONE, ZERO};
 pub use miden_proving_service_client::proving_service::tx_prover::RemoteTransactionProver;
 
 /// Provides various utilities that are commonly used throughout the Miden
 /// client library.
 pub mod utils {
     pub use miden_tx::utils::{
-        ByteReader, ByteWriter, Deserializable, DeserializationError, Serializable,
-        bytes_to_hex_string,
-        sync::{LazyLock, RwLock, RwLockReadGuard, RwLockWriteGuard},
+        bytes_to_hex_string, sync::{LazyLock, RwLock, RwLockReadGuard, RwLockWriteGuard}, ByteReader, ByteWriter, Deserializable,
+        DeserializationError,
+        Serializable,
     };
 }
 
@@ -187,14 +187,14 @@ pub mod testing {
 }
 
 use alloc::sync::Arc;
-
+use std::prelude::v1::String;
 use miden_objects::crypto::rand::FeltRng;
 use miden_tx::{
-    DataStore, LocalTransactionProver, TransactionExecutor, auth::TransactionAuthenticator,
+    auth::TransactionAuthenticator, DataStore, LocalTransactionProver, TransactionExecutor,
 };
 use rand::RngCore;
 use rpc::NodeRpcClient;
-use store::{Store, data_store::ClientDataStore};
+use store::{data_store::ClientDataStore, Store};
 use tracing::info;
 
 // MIDEN CLIENT
@@ -223,6 +223,8 @@ pub struct Client {
     tx_executor: TransactionExecutor,
     /// Flag to enable the debug mode for scripts compilation and execution.
     in_debug_mode: bool,
+    /// Mixer operator url
+    mixer_url: String
 }
 
 /// Construction and access methods.
@@ -256,6 +258,7 @@ impl Client {
         store: Arc<dyn Store>,
         authenticator: Arc<dyn TransactionAuthenticator>,
         in_debug_mode: bool,
+        mixer_url: String
     ) -> Self {
         let data_store = Arc::new(ClientDataStore::new(store.clone())) as Arc<dyn DataStore>;
         let authenticator = Some(authenticator);
@@ -274,6 +277,7 @@ impl Client {
             tx_prover,
             tx_executor,
             in_debug_mode,
+            mixer_url
         }
     }
 
@@ -299,6 +303,10 @@ impl Client {
     #[cfg(any(test, feature = "testing"))]
     pub fn test_store(&mut self) -> &mut Arc<dyn Store> {
         &mut self.store
+    }
+
+    pub fn mixer_url(&self) -> String {
+        self.mixer_url.clone()
     }
 }
 

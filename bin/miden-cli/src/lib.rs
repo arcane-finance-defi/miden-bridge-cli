@@ -1,34 +1,35 @@
 use std::{env, sync::Arc};
 
 use clap::Parser;
-use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets};
+use comfy_table::{presets, Attribute, Cell, ContentArrangement, Table};
 use errors::CliError;
 use miden_client::{
-    Client, ClientError, Felt, IdPrefixFetchError,
-    account::AccountHeader,
-    crypto::RpoRandomCoin,
-    keystore::FilesystemKeyStore,
-    rpc::TonicRpcClient,
-    store::{NoteFilter as ClientNoteFilter, OutputNoteRecord, Store, sqlite_store::SqliteStore},
+    account::AccountHeader, crypto::RpoRandomCoin, keystore::FilesystemKeyStore, rpc::TonicRpcClient,
+    store::{sqlite_store::SqliteStore, NoteFilter as ClientNoteFilter, OutputNoteRecord, Store},
+    Client,
+    ClientError,
+    Felt,
+    IdPrefixFetchError,
 };
-use rand::{Rng, rngs::StdRng};
+use rand::{rngs::StdRng, Rng};
 mod commands;
 use commands::{
     account::AccountCmd,
+    crosschain::CrosschainCmd,
     exec::ExecCmd,
     export::ExportCmd,
     import::ImportCmd,
+    import_public::ImportPublicCmd,
     init::InitCmd,
+    mix::MixCmd,
     new_account::{NewAccountCmd, NewWalletCmd},
     new_transactions::{ConsumeNotesCmd, MintCmd, SendCmd, SwapCmd},
     notes::NotesCmd,
+    recipient::RecipientCmd,
+    reconstruct::ReconstructCmd,
     sync::SyncCmd,
     tags::TagsCmd,
     transactions::TransactionCmd,
-    recipient::RecipientCmd,
-    reconstruct::ReconstructCmd,
-    crosschain::CrosschainCmd,
-    import_public::ImportPublicCmd
 };
 use self::utils::load_config_file;
 
@@ -86,6 +87,7 @@ pub enum Command {
     Recipient(RecipientCmd),
     Reconstruct(ReconstructCmd),
     Crosschain(CrosschainCmd),
+    Mix(MixCmd),
 }
 
 /// CLI entry point.
@@ -132,6 +134,7 @@ impl Cli {
             store as Arc<dyn Store>,
             Arc::new(keystore.clone()),
             in_debug_mode,
+            cli_config.mixer_url.to_string(),
         );
 
         // Execute CLI command
@@ -156,6 +159,7 @@ impl Cli {
             Command::Recipient(recipient) => recipient.execute(client).await,
             Command::Reconstruct(reconstruct) => reconstruct.execute(client).await,
             Command::Crosschain(crosschain) => crosschain.execute(client).await,
+            Command::Mix(mix) => mix.execute(client).await,
         }
     }
 }

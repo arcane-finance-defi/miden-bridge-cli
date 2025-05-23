@@ -1,16 +1,13 @@
-use std::{
-    fs::File,
-    io::Write,
-    path::{Path, PathBuf},
-};
-
+use std::{fmt, fs::File, io::Write, path::{Path, PathBuf}};
 use figment::{
     Figment,
     providers::{Format, Toml},
 };
+use miden_objects::{Felt, StarkField};
+use thiserror::Error;
 use miden_client::{Client, account::AccountId};
 use tracing::info;
-
+use miden_client::utils::DeserializationError;
 use super::{CLIENT_CONFIG_FILE_NAME, config::CliConfig, get_account_with_id_prefix};
 use crate::{errors::CliError, faucet_details_map::FaucetDetailsMap};
 
@@ -108,3 +105,4 @@ pub fn load_faucet_details_map() -> Result<FaucetDetailsMap, CliError> {
     let (config, _) = load_config_file()?;
     FaucetDetailsMap::new(config.token_symbol_map_filepath)
 }
+

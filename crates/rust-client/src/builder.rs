@@ -16,6 +16,7 @@ use crate::rpc::{Endpoint, TonicRpcClient};
 #[cfg(feature = "sqlite")]
 use crate::store::sqlite_store::SqliteStore;
 use crate::{Client, ClientError, keystore::FilesystemKeyStore, rpc::NodeRpcClient, store::Store};
+use crate::consts::MIXER_DEFAULT_URL;
 
 /// Represents the configuration for an authenticator.
 ///
@@ -198,6 +199,6 @@ impl ClientBuilder {
             }
         };
 
-        Ok(Client::new(rpc_api, rng, arc_store, authenticator, self.in_debug_mode))
+        Ok(Client::new(rpc_api, rng, arc_store, authenticator, self.in_debug_mode, MIXER_DEFAULT_URL.try_into().unwrap()))
     }
 }
