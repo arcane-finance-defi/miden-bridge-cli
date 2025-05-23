@@ -11,6 +11,7 @@ use figment::{
 };
 use miden_client::rpc::Endpoint;
 use serde::{Deserialize, Serialize};
+use miden_client::consts::MIXER_DEFAULT_URL;
 
 use crate::errors::CliError;
 
@@ -36,6 +37,8 @@ pub struct CliConfig {
     pub remote_prover_endpoint: Option<CliEndpoint>,
     /// Path to the directory from where account component template files will be loaded.
     pub component_template_directory: PathBuf,
+    /// Mixer offchain operator url
+    pub mixer_url: CliEndpoint,
     /// Maximum number of blocks the client can be behind the network for transactions and account
     /// proofs to be considered valid.
     pub max_block_number_delta: Option<u32>,
@@ -73,6 +76,7 @@ impl Default for CliConfig {
             token_symbol_map_filepath: Path::new(TOKEN_SYMBOL_MAP_FILEPATH).to_path_buf(),
             remote_prover_endpoint: None,
             component_template_directory: Path::new(DEFAULT_COMPONENT_TEMPLATE_DIR).to_path_buf(),
+            mixer_url: MIXER_DEFAULT_URL.try_into().unwrap(),
             max_block_number_delta: None,
         }
     }
