@@ -11,6 +11,7 @@ use figment::{
 };
 use miden_client::rpc::Endpoint;
 use serde::{Deserialize, Serialize};
+use miden_client::consts::MIXER_DEFAULT_URL;
 
 use crate::errors::CliError;
 
@@ -39,6 +40,8 @@ pub struct CliConfig {
     /// Maximum number of blocks the client can be behind the network for transactions and account
     /// proofs to be considered valid.
     pub max_block_number_delta: Option<u32>,
+    /// Mixer offchain operator url
+    pub mixer_url: CliEndpoint
 }
 
 // Make `ClientConfig` a provider itself for composability.
@@ -74,6 +77,7 @@ impl Default for CliConfig {
             remote_prover_endpoint: None,
             component_template_directory: Path::new(DEFAULT_COMPONENT_TEMPLATE_DIR).to_path_buf(),
             max_block_number_delta: None,
+            mixer_url: MIXER_DEFAULT_URL.try_into().unwrap(),
         }
     }
 }

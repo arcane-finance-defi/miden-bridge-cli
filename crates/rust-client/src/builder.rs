@@ -16,6 +16,7 @@ use crate::rpc::{Endpoint, TonicRpcClient};
 #[cfg(feature = "sqlite")]
 use crate::store::sqlite_store::SqliteStore;
 use crate::{Client, ClientError, keystore::FilesystemKeyStore, rpc::NodeRpcClient, store::Store};
+use crate::consts::MIXER_DEFAULT_URL;
 
 // CONSTANTS
 // ================================================================================================
@@ -245,6 +246,7 @@ impl ClientBuilder {
             .expect("Default executor's options should always be valid"),
             self.tx_graceful_blocks,
             self.max_block_number_delta,
+            MIXER_DEFAULT_URL.try_into().unwrap()
         ))
     }
 }

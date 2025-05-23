@@ -13,3 +13,4 @@ pub mod crosschain;
 pub mod recipient;
 pub mod reconstruct;
 pub mod import_public;
+pub mod mix;

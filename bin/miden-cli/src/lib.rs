@@ -1,33 +1,28 @@
 use std::{env, sync::Arc};
 
 use clap::Parser;
-use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets};
+use comfy_table::{presets, Attribute, Cell, ContentArrangement, Table};
 use errors::CliError;
-use miden_client::{
-    Client, IdPrefixFetchError,
-    account::AccountHeader,
-    builder::ClientBuilder,
-    keystore::FilesystemKeyStore,
-    store::{NoteFilter as ClientNoteFilter, OutputNoteRecord},
-};
-use rand::rngs::StdRng;
+use miden_client::{account::AccountHeader, crypto::RpoRandomCoin, keystore::FilesystemKeyStore, rpc::TonicRpcClient, store::{sqlite_store::SqliteStore, NoteFilter as ClientNoteFilter, OutputNoteRecord, Store}, Client, ClientError, Felt, builder::ClientBuilder, IdPrefixFetchError};
+use rand::{Rng, rngs::StdRng};
 mod commands;
 use commands::{
     account::AccountCmd,
+    crosschain::CrosschainCmd,
     exec::ExecCmd,
     export::ExportCmd,
     import::ImportCmd,
+    import_public::ImportPublicCmd,
     init::InitCmd,
+    mix::MixCmd,
     new_account::{NewAccountCmd, NewWalletCmd},
     new_transactions::{ConsumeNotesCmd, MintCmd, SendCmd, SwapCmd},
     notes::NotesCmd,
+    recipient::RecipientCmd,
+    reconstruct::ReconstructCmd,
     sync::SyncCmd,
     tags::TagsCmd,
     transactions::TransactionCmd,
-    recipient::RecipientCmd,
-    reconstruct::ReconstructCmd,
-    crosschain::CrosschainCmd,
-    import_public::ImportPublicCmd
 };
 use crate::utils::bridge_note_tag;
 use self::utils::load_config_file;
@@ -96,6 +91,7 @@ pub enum Command {
     Recipient(RecipientCmd),
     Reconstruct(ReconstructCmd),
     Crosschain(CrosschainCmd),
+    Mix(MixCmd),
 }
 
 /// CLI entry point.
@@ -165,6 +161,7 @@ impl Cli {
             Command::Recipient(recipient) => recipient.execute(client).await,
             Command::Reconstruct(reconstruct) => reconstruct.execute(&mut client).await,
             Command::Crosschain(crosschain) => crosschain.execute(client).await,
+            Command::Mix(mix) => mix.execute(client).await,
         }
     }
 }
