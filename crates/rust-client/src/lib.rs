@@ -113,7 +113,7 @@
 
 #[macro_use]
 extern crate alloc;
-use alloc::boxed::Box;
+use alloc::{boxed::Box, string::String};
 
 #[cfg(feature = "std")]
 extern crate std;
