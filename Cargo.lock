@@ -2036,6 +2036,21 @@ dependencies = [
 [[package]]
 name = "miden-bridge"
 version = "0.1.0"
+source = "git+https://github.com/arcane-finance-defi/miden-bridge-mono?branch=feat%2Fmixer#5ae5d8f18a6a187b9673f90c7023baeaf2f2122f"
+dependencies = [
+ "miden-assembly",
+ "miden-lib",
+ "miden-objects",
+ "miden-stdlib",
+ "miden-tx",
+ "regex",
+ "thiserror 2.0.12",
+ "walkdir",
+]
+
+[[package]]
+name = "miden-bridge"
+version = "0.1.0"
 source = "git+ssh://git@github.com/arcane-finance-defi/miden-bridge-mono.git#3a7be823a3de9d94ac1055ae3b505762e02c73d4"
 dependencies = [
  "miden-assembly",
@@ -2057,7 +2072,7 @@ dependencies = [
  "clap",
  "comfy-table",
  "figment",
- "miden-bridge",
+ "miden-bridge 0.1.0 (git+ssh://git@github.com/arcane-finance-defi/miden-bridge-mono.git)",
  "miden-client",
  "miden-client-tests",
  "miden-lib",
@@ -2131,6 +2146,7 @@ dependencies = [
 name = "miden-client-web"
 version = "0.8.1"
 dependencies = [
+ "miden-bridge 0.1.0 (git+https://github.com/arcane-finance-defi/miden-bridge-mono?branch=feat%2Fmixer)",
  "miden-client",
  "miden-lib",
  "miden-objects",
