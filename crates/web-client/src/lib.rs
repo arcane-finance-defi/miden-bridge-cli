@@ -12,6 +12,7 @@ use miden_objects::{Felt, MAX_TX_EXECUTION_CYCLES, MIN_TX_EXECUTION_CYCLES};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use wasm_bindgen::prelude::*;
+use miden_client::consts::MIXER_DEFAULT_URL;
 
 pub mod account;
 pub mod export;
@@ -122,6 +123,7 @@ impl WebClient {
                 .expect("Default executor's options should always be valid"),
                 None,
                 None,
+                MIXER_DEFAULT_URL.to_string(),
             )
             .await
             .map_err(|err| js_error_with_context(err, "Failed to create client"))?,
