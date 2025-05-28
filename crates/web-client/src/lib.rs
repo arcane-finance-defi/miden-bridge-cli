@@ -13,6 +13,7 @@ use miden_objects::{
 };
 use rand::{Rng, SeedableRng, rngs::StdRng};
 use wasm_bindgen::prelude::*;
+use miden_client::consts::MIXER_DEFAULT_URL;
 
 pub mod account;
 pub mod export;
@@ -99,6 +100,7 @@ impl WebClient {
             .expect("Default executor's options should always be valid"),
             None,
             None,
+            MIXER_DEFAULT_URL.to_string(),
         ));
         self.store = Some(web_store);
         self.keystore = Some(keystore);
