@@ -1,5 +1,4 @@
 use miden_client::note::{NoteScript as NativeNoteScript, WellKnownNote};
-use miden_bridge::notes::bridge::croschain as croschain_script;
 use wasm_bindgen::prelude::*;
 
 #[derive(Clone)]
