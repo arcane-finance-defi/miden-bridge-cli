@@ -11,6 +11,7 @@ use miden_client::{
 use miden_objects::{Felt, crypto::rand::RpoRandomCoin};
 use rand::{Rng, SeedableRng, rngs::StdRng};
 use wasm_bindgen::prelude::*;
+use miden_client::consts::MIXER_DEFAULT_URL;
 
 pub mod account;
 pub mod export;
@@ -89,6 +90,7 @@ impl WebClient {
             web_store.clone(),
             Arc::new(keystore.clone()),
             false,
+            MIXER_DEFAULT_URL.to_string(),
         ));
         self.store = Some(web_store);
         self.keystore = Some(keystore);

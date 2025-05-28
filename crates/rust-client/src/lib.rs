@@ -187,7 +187,7 @@ pub mod testing {
 }
 
 use alloc::sync::Arc;
-use std::prelude::v1::String;
+use alloc::string::String;
 use miden_objects::crypto::rand::FeltRng;
 use miden_tx::{
     auth::TransactionAuthenticator, DataStore, LocalTransactionProver, TransactionExecutor,
