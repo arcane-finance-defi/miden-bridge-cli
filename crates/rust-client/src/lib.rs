@@ -200,6 +200,7 @@ pub mod testing {
 use alloc::sync::Arc;
 
 use miden_objects::crypto::rand::FeltRng;
+use miden_objects::note::{NoteId, NoteInclusionProof};
 use miden_tx::{
     LocalTransactionProver, TransactionExecutor, TransactionMastStore,
     auth::TransactionAuthenticator,
@@ -208,7 +209,8 @@ use rand::RngCore;
 use rpc::NodeRpcClient;
 use store::{Store, data_store::ClientDataStore};
 use tracing::info;
-
+use crate::rpc::domain::note::NetworkNote;
+use crate::rpc::RpcError;
 // MIDEN CLIENT
 // ================================================================================================
 
@@ -329,6 +331,17 @@ impl Client {
     #[cfg(any(test, feature = "testing"))]
     pub fn test_store(&mut self) -> &mut Arc<dyn Store> {
         &mut self.store
+    }
+
+    pub async fn get_note_inclusion_proof(&self, note_id: NoteId) -> Result<Option<NoteInclusionProof>, ClientError> {
+        let result = self.rpc_api.get_note_by_id(note_id).await;
+
+        match result {
+            Ok(NetworkNote::Private(_, _, proof)) => Ok(Some(proof)),
+            Ok(NetworkNote::Public(_, proof)) => Ok(Some(proof)),
+            Err(RpcError::NoteNotFound(_)) => Ok(None),
+            Err(err) => Err(ClientError::RpcError(err))
+        }
     }
 }
 
