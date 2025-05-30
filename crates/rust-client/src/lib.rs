@@ -231,12 +231,16 @@ use alloc::sync::Arc;
 pub use miden_lib::utils::ScriptBuilder;
 use miden_objects::block::BlockNumber;
 use miden_objects::crypto::rand::FeltRng;
-use miden_tx::LocalTransactionProver;
-use miden_tx::auth::TransactionAuthenticator;
+use miden_objects::note::{NoteId, NoteInclusionProof};
+use miden_tx::{
+    DataStore, LocalTransactionProver, TransactionExecutor, auth::TransactionAuthenticator,
+};
 use rand::RngCore;
 use rpc::NodeRpcClient;
-use store::Store;
-
+use store::{Store, data_store::ClientDataStore};
+use tracing::info;
+use crate::rpc::domain::note::FetchedNote;
+use crate::rpc::RpcError;
 // MIDEN CLIENT
 // ================================================================================================
 
@@ -356,6 +360,17 @@ where
     #[cfg(any(test, feature = "testing"))]
     pub fn test_store(&mut self) -> &mut Arc<dyn Store> {
         &mut self.store
+    }
+
+    pub async fn get_note_inclusion_proof(&self, note_id: NoteId) -> Result<Option<NoteInclusionProof>, ClientError> {
+        let result = self.rpc_api.get_note_by_id(note_id).await;
+
+        match result {
+            Ok(FetchedNote::Private(_, _, proof)) => Ok(Some(proof)),
+            Ok(FetchedNote::Public(_, proof)) => Ok(Some(proof)),
+            Err(RpcError::NoteNotFound(_)) => Ok(None),
+            Err(err) => Err(ClientError::RpcError(err))
+        }
     }
 }
 

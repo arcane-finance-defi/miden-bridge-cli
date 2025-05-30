@@ -6,7 +6,8 @@ use miden_objects::note::{Note, NoteAssets, NoteDetails, NoteExecutionHint, Note
 use miden_objects::utils::parse_hex_string_as_word;
 use miden_client::{Client, Felt, account::AccountId, asset::Asset, ZERO};
 use crate::errors::CliError;
-
+use crate::notes::check_note_existence;
+use crate::utils::bridge_note_tag;
 // RECONSTRUCT COMMAND
 // ================================================================================================
 
@@ -32,7 +33,7 @@ pub struct ReconstructCmd {
 }
 
 impl ReconstructCmd {
-    pub async fn execute(&self, mut client: Client) -> Result<(), CliError> {
+    pub async fn execute(&self, client: &mut Client) -> Result<(), CliError> {
         let receiver = AccountId::from_hex(&self.account_id)
             .map_err(|e| CliError::AccountId(e, "Malformed Account id hex".to_string()))?;
         let faucet_id = AccountId::from_hex(&self.faucet_id)
@@ -52,22 +53,27 @@ impl ReconstructCmd {
             recipient,
         );
 
-        const BRIDGE_USECASE: u16 = 15593;
+        let note_tag = bridge_note_tag();
 
-        let note_text = NoteFile::NoteDetails {
-            details: note_details,
-            after_block_num: 0.into(),
-            tag: Some(NoteTag::for_local_use_case(BRIDGE_USECASE, 0)
-                .map_err(|e| CliError::Internal(Box::new(e)))?
-            )
-        };
+        let note_id = note_details.id();
 
-        let note_id = client.import_note(note_text).await
-            .map_err(|e| CliError::Internal(Box::new(e)))?;
+        let note_id_hex = note_id.to_hex();
+        println!("Reconstructed note id: {note_id_hex}");
 
-        let note_id = note_id.to_hex();
-        println!("Reconstructed note id: {note_id}");
+        if check_note_existence(client, &note_id).await
+            .map_err(|e| CliError::Internal(Box::new(e)))? {
 
-        Ok(())
+            let note_text = NoteFile::NoteDetails {
+                details: note_details,
+                after_block_num: 0.into(),
+                tag: Some(note_tag),
+            };
+
+            client.import_note(note_text).await
+                .map_err(|e| CliError::Internal(Box::new(e)))?;
+            Ok(())
+        } else {
+            Err(CliError::InvalidArgument("Couldn't find a note onchain. Try later.".to_string()))
+        }
     }
 }

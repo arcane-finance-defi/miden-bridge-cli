@@ -2,10 +2,12 @@ use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use figment::Figment;
-use figment::providers::{Format, Toml};
-use miden_client::Client;
-use miden_client::account::AccountId;
+use figment::{
+    Figment,
+    providers::{Format, Toml},
+};
+use miden_objects::note::NoteTag;
+use miden_client::{Client, account::AccountId};
 use miden_objects::address::Address;
 use tracing::info;
 
@@ -14,6 +16,11 @@ use super::{CLIENT_CONFIG_FILE_NAME, get_account_with_id_prefix};
 use crate::errors::CliError;
 use crate::faucet_details_map::FaucetDetailsMap;
 
+
+pub(crate) fn bridge_note_tag() -> NoteTag {
+    const BRIDGE_USECASE: u16 = 14594;
+    NoteTag::for_local_use_case(BRIDGE_USECASE, 0).unwrap()
+}
 pub(crate) const SHARED_TOKEN_DOCUMENTATION: &str = "There are two accepted formats for the asset:
 - `<AMOUNT>::<FAUCET_ID>` where `<AMOUNT>` is in the faucet base units.
 - `<AMOUNT>::<TOKEN_SYMBOL>` where `<AMOUNT>` is a decimal number representing the quantity of

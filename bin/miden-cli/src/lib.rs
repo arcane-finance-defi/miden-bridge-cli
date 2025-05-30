@@ -29,6 +29,7 @@ use commands::reconstruct::ReconstructCmd;
 use commands::crosschain::CrosschainCmd;
 use commands::import_public::ImportPublicCmd;
 
+use crate::utils::bridge_note_tag;
 use self::utils::load_config_file;
 
 pub type CliKeyStore = FilesystemKeyStore<StdRng>;
@@ -40,6 +41,7 @@ mod info;
 mod utils;
 mod public_notes;
 mod crosschain;
+mod notes;
 
 /// Config file name.
 const CLIENT_CONFIG_FILE_NAME: &str = "miden-client.toml";
@@ -221,7 +223,7 @@ impl Cli {
             Command::Swap(swap) => Box::pin(swap.execute(client)).await,
             Command::ConsumeNotes(consume_notes) => Box::pin(consume_notes.execute(client)).await,
             Command::Recipient(recipient) => recipient.execute(client).await,
-            Command::Reconstruct(reconstruct) => reconstruct.execute(client).await,
+            Command::Reconstruct(reconstruct) => reconstruct.execute(&mut client).await,
             Command::Crosschain(crosschain) => crosschain.execute(client).await,
         }
     }
