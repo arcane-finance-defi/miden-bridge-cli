@@ -33,7 +33,7 @@ impl Client {
     }
 
     /// Adds a note tag for the client to track. This tag's source will be marked as `User`.
-    pub async fn add_note_tag(&mut self, tag: NoteTag) -> Result<(), ClientError> {
+    pub async fn add_note_tag(&self, tag: NoteTag) -> Result<(), ClientError> {
         match self
             .store
             .add_note_tag(NoteTagRecord { tag, source: NoteTagSource::User })
