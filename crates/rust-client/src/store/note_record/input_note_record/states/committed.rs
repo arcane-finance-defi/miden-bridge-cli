@@ -32,11 +32,6 @@ impl NoteStateHandler for CommittedNoteState {
         inclusion_proof: NoteInclusionProof,
         metadata: NoteMetadata,
     ) -> Result<Option<InputNoteState>, NoteRecordError> {
-        if self.inclusion_proof != inclusion_proof || self.metadata != metadata {
-            return Err(NoteRecordError::StateTransitionError(
-                "Inclusion proof or metadata do not match the expected values".to_string(),
-            ));
-        }
         Ok(None)
     }
 
@@ -52,11 +47,6 @@ impl NoteStateHandler for CommittedNoteState {
         _note_id: NoteId,
         block_header: &BlockHeader,
     ) -> Result<Option<InputNoteState>, NoteRecordError> {
-        if block_header.note_root() != self.block_note_root {
-            return Err(NoteRecordError::StateTransitionError(
-                "Block header does not match the expected note root".to_string(),
-            ));
-        }
         Ok(None)
     }
 
