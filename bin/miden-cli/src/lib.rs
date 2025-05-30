@@ -30,6 +30,7 @@ use commands::{
     crosschain::CrosschainCmd,
     import_public::ImportPublicCmd
 };
+use crate::utils::bridge_note_tag;
 use self::utils::load_config_file;
 
 pub type CliKeyStore = FilesystemKeyStore<StdRng>;
@@ -41,6 +42,7 @@ mod info;
 mod utils;
 mod public_notes;
 mod crosschain;
+mod notes;
 
 /// Config file name.
 const CLIENT_CONFIG_FILE_NAME: &str = "miden-client.toml";
@@ -123,7 +125,7 @@ impl Cli {
         let keystore = CliKeyStore::new(cli_config.secret_keys_directory.clone())
             .map_err(CliError::KeyStore)?;
 
-        let client = Client::new(
+        let mut client = Client::new(
             Arc::new(TonicRpcClient::new(
                 &cli_config.rpc.endpoint.clone().into(),
                 cli_config.rpc.timeout_ms,
@@ -154,7 +156,7 @@ impl Cli {
             Command::Swap(swap) => swap.execute(client).await,
             Command::ConsumeNotes(consume_notes) => consume_notes.execute(client).await,
             Command::Recipient(recipient) => recipient.execute(client).await,
-            Command::Reconstruct(reconstruct) => reconstruct.execute(client).await,
+            Command::Reconstruct(reconstruct) => reconstruct.execute(&mut client).await,
             Command::Crosschain(crosschain) => crosschain.execute(client).await,
         }
     }
