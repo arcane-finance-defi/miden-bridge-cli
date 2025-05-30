@@ -125,12 +125,8 @@ impl ReconstructCmd {
             _ => Err(CliError::Input("Wrong arguments set".to_string()))
         }?;
 
-        let note_id = client.import_note(note_text).await
+        client.import_note(note_text).await
             .map_err(|e| CliError::Internal(Box::new(e)))?;
-
-        let note_id = note_id.to_hex();
-        println!("Reconstructed note id: {note_id}");
-
         Ok(())
     }
 }
