@@ -62,7 +62,7 @@ pub struct ReconstructCmd {
 impl ReconstructCmd {
     pub async fn execute(&self, client: &mut Client) -> Result<(), CliError> {
         client.sync_state().await?;
-        let note_text = match self {
+        let (note_text, note_id) = match self {
             Self {
                 note_type: ReconstructType::P2ID,
                 account_id: Some(account_id),
@@ -100,11 +100,11 @@ impl ReconstructCmd {
                 if check_note_existence(client, &note_id).await
                     .map_err(|e| CliError::Internal(Box::new(e)))? {
 
-                    Ok(NoteFile::NoteDetails {
+                    Ok((NoteFile::NoteDetails {
                         details: note_details,
                         after_block_num: 0.into(),
                         tag: Some(note_tag),
-                    })
+                    }, note_id))
                 } else {
                     Err(CliError::InvalidArgument("Couldn't find a note onchain. Try later.".to_string()))
                 }
@@ -131,8 +131,13 @@ impl ReconstructCmd {
             _ => Err(CliError::Input("Wrong arguments set".to_string()))
         }?;
 
-        client.import_note(note_text).await
-            .map_err(|e| CliError::Internal(Box::new(e)))?;
+        if check_note_existence(client, &note_id).await
+            .map_err(|e| CliError::Internal(Box::new(e)))? {
+
+            client.import_note(note_text).await
+                .map_err(|e| CliError::Internal(Box::new(e)))?;
+        }
+
         Ok(())
     }
 }
