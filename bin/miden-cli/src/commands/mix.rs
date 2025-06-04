@@ -59,7 +59,7 @@ struct MixResponse {
 impl MixCmd {
     pub async fn execute(&self, client: &mut Client) -> Result<(), CliError> {
         client.sync_state().await?;
-        let note_text = reconstruct_crosschain_note(
+        let (note_text, note_id) = reconstruct_crosschain_note(
             &self.serial_number,
             &self.bridge_serial_number,
             &self.dest_chain,
