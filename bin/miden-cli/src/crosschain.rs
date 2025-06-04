@@ -6,7 +6,7 @@ use miden_bridge::notes::bridge::croschain;
 use miden_objects::{AccountIdError, AssetError, Felt, FieldElement, NoteError, StarkField, Word};
 use miden_objects::account::AccountId;
 use miden_objects::asset::FungibleAsset;
-use miden_objects::note::{NoteAssets, NoteDetails, NoteFile, NoteInputs, NoteRecipient, NoteTag};
+use miden_objects::note::{NoteAssets, NoteDetails, NoteFile, NoteId, NoteInputs, NoteRecipient, NoteTag};
 use miden_objects::utils::{parse_hex_string_as_word, DeserializationError};
 
 #[derive(Error, Debug)]
@@ -85,7 +85,7 @@ pub async fn reconstruct_crosschain_note(
     dest_address: &String,
     faucet_id: &String,
     asset_amount: &u64
-) -> Result<NoteFile, CrosschainNoteReconstructionError> {
+) -> Result<(NoteFile, NoteId), CrosschainNoteReconstructionError> {
     let serial_number = parse_hex_string_as_word(serial_number)
         .map_err(|e| CrosschainNoteReconstructionError::UnparsableHexError(e.to_string()))?;
 
@@ -112,11 +112,16 @@ pub async fn reconstruct_crosschain_note(
         recipient,
     );
 
+    let note_id = note_details.id();
+
     const BRIDGE_USECASE: u16 = 15593;
 
-    Ok(NoteFile::NoteDetails {
-        details: note_details,
-        after_block_num: 0.into(),
-        tag: Some(NoteTag::for_local_use_case(BRIDGE_USECASE, 0)?)
-    })
+    Ok((
+        NoteFile::NoteDetails {
+            details: note_details,
+            after_block_num: 0.into(),
+            tag: Some(NoteTag::for_local_use_case(BRIDGE_USECASE, 0)?)
+        },
+        note_id
+    ))
 }
