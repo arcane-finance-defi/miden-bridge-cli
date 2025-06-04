@@ -207,6 +207,7 @@ pub mod testing {
 
 use alloc::sync::Arc;
 use alloc::string::String;
+use miden_lib::utils::ScriptBuilder;
 use miden_objects::crypto::rand::FeltRng;
 use miden_objects::note::{NoteId, NoteInclusionProof};
 use miden_tx::{

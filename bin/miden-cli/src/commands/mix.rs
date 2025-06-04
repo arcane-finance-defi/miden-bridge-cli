@@ -1,12 +1,16 @@
 use clap::Parser;
-use miden_objects::note::{Note, NoteFile};
+use miden_objects::FieldElement;
+use miden_objects::note::{Note, NoteExecutionHint, NoteFile, NoteMetadata, NoteType};
 use miden_objects::utils::{Serializable, ToHex};
-use miden_client::Client;
+use miden_client::{Client, Felt};
 use miden_client::store::{NoteExportType, NoteFilter};
 use crate::crosschain::reconstruct_crosschain_note;
 use crate::errors::CliError;
 use serde::{Deserialize, Serialize};
 use tracing_subscriber::fmt::format;
+use crate::errors::CliError::AccountId;
+use crate::notes::check_note_existence;
+use crate::utils::bridge_note_tag;
 // MIX COMMAND
 // ================================================================================================
 
@@ -53,7 +57,7 @@ struct MixResponse {
 }
 
 impl MixCmd {
-    pub async fn execute(&self, mut client: Client) -> Result<(), CliError> {
+    pub async fn execute(&self, client: &mut Client) -> Result<(), CliError> {
         client.sync_state().await?;
         let note_text = reconstruct_crosschain_note(
             &self.serial_number,
@@ -64,50 +68,77 @@ impl MixCmd {
             &self.asset_amount
         ).await.map_err(|e| CliError::Internal(Box::new(e)))?;
 
-        let note_id = client.import_note(note_text).await
-            .map_err(|e| CliError::Internal(Box::new(e)))?;
-
-        let note_id_hex = note_id.to_hex();
-        println!("Reconstructed note id: {note_id_hex}");
-
-        client.sync_state().await?;
-
-        let input_note = client.get_input_notes(NoteFilter::Unique(note_id))
-            .await?
-            .pop()
-            .unwrap();
-
-        let inclusion_proof = match input_note.inclusion_proof() {
-            Some(inclusion_proof) => Ok(inclusion_proof),
-            _ => Err(CliError::InvalidArgument("Note still not commited".to_string()))
-        }?;
-
-        let note_text = NoteFile::NoteWithProof(
-            Note::new(
-                input_note.details().assets().clone(),
-                input_note.metadata().unwrap().clone(),
-                input_note.details().recipient().clone()
-            ),
-            inclusion_proof.clone()
-        );
-
-        let note_text = note_text.to_bytes().to_hex();
-
-        let request = MixRequest {
-            note_text,
-            account_id: self.faucet_id.clone(),
+        let note_id = match &note_text {
+            NoteFile::NoteId(id) => id,
+            NoteFile::NoteDetails { details, .. } => &details.id(),
+            NoteFile::NoteWithProof(note, _) => &note.id()
         };
 
-        let response = reqwest::Client::new()
-            .post(format!("{}/mix", client.mixer_url().as_str()))
-            .json(&request)
-            .send()
-            .await.map_err(|e| CliError::Internal(Box::new(e)))?
-            .json::<MixResponse>()
-            .await.map_err(|e| CliError::Internal(Box::new(e)))?;
+        let faucet_id = miden_objects::account::AccountId::from_hex(self.faucet_id.as_str())
+            .map_err(|e| CliError::AccountId(e, "Malformed faucet id hex".to_string()))?;
 
-        println!("Generated tx id: {}", response.tx_id);
+        if check_note_existence(client, note_id).await
+            .map_err(|e| CliError::Internal(Box::new(e)))? {
 
-        Ok(())
+            let note_id = client.import_note(note_text).await
+                .map_err(|e| CliError::Internal(Box::new(e)))?;
+
+            let note_id_hex = note_id.to_hex();
+            println!("Reconstructed note id: {note_id_hex}");
+
+            client.sync_state().await?;
+
+            let input_note = client.get_input_notes(NoteFilter::Unique(note_id))
+                .await?
+                .pop()
+                .unwrap();
+
+            let inclusion_proof = match input_note.inclusion_proof() {
+                Some(inclusion_proof) => Ok(inclusion_proof.clone()),
+                None => {
+                    match client.get_note_inclusion_proof(note_id.clone()).await
+                        .map_err(|err| CliError::Internal(Box::new(err)))? {
+                        Some(proof) => Ok(proof),
+                        _ => Err(CliError::InvalidArgument("Note still not commited".to_string()))
+                    }
+                }
+            }?;
+
+            let note_text = NoteFile::NoteWithProof(
+                Note::new(
+                    input_note.details().assets().clone(),
+                    NoteMetadata::new(
+                        faucet_id,
+                        NoteType::Private,
+                        bridge_note_tag(),
+                        NoteExecutionHint::Always,
+                        Felt::ZERO
+                    ).unwrap(),
+                    input_note.details().recipient().clone()
+                ),
+                inclusion_proof
+            );
+
+            let note_text = note_text.to_bytes().to_hex();
+
+            let request = MixRequest {
+                note_text,
+                account_id: self.faucet_id.clone(),
+            };
+
+            let response = reqwest::Client::new()
+                .post(format!("{}/mix", client.mixer_url().as_str()))
+                .json(&request)
+                .send()
+                .await.map_err(|e| CliError::Internal(Box::new(e)))?
+                .json::<MixResponse>()
+                .await.map_err(|e| CliError::Internal(Box::new(e)))?;
+
+            println!("Generated tx id: {}", response.tx_id);
+
+            Ok(())
+        } else {
+            Err(CliError::InvalidArgument("Couldn't find a note onchain. Try later.".to_string()))
+        }
     }
 }
