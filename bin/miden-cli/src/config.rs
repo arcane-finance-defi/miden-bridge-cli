@@ -10,6 +10,7 @@ use figment::{
 };
 use miden_client::rpc::Endpoint;
 use serde::{Deserialize, Serialize};
+use miden_client::consts::MIXER_DEFAULT_URL;
 
 const TOKEN_SYMBOL_MAP_FILEPATH: &str = "token_symbol_map.toml";
 const DEFAULT_COMPONENT_TEMPLATE_DIR: &str = "./templates";
@@ -33,6 +34,8 @@ pub struct CliConfig {
     pub remote_prover_endpoint: Option<CliEndpoint>,
     /// Path to the directory from where account component template files will be loaded.
     pub component_template_directory: PathBuf,
+    /// Mixer offchain operator url
+    pub mixer_url: CliEndpoint
 }
 
 // Make `ClientConfig` a provider itself for composability.
@@ -67,6 +70,7 @@ impl Default for CliConfig {
             token_symbol_map_filepath: Path::new(TOKEN_SYMBOL_MAP_FILEPATH).to_path_buf(),
             remote_prover_endpoint: None,
             component_template_directory: Path::new(DEFAULT_COMPONENT_TEMPLATE_DIR).to_path_buf(),
+            mixer_url: MIXER_DEFAULT_URL.try_into().unwrap(),
         }
     }
 }

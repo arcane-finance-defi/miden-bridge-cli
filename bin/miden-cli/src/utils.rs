@@ -1,14 +1,11 @@
-use std::{
-    fs::File,
-    io::Write,
-    path::{Path, PathBuf},
-};
-
+use std::{fmt, fs::File, io::Write, path::{Path, PathBuf}};
 use figment::{
     Figment,
     providers::{Format, Toml},
 };
 use miden_objects::note::NoteTag;
+use miden_objects::{Felt, StarkField};
+use thiserror::Error;
 use miden_client::{Client, account::AccountId};
 use tracing::info;
 
