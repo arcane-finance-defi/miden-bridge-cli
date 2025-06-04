@@ -226,7 +226,7 @@ impl Cli {
             Command::Recipient(recipient) => recipient.execute(client).await,
             Command::Reconstruct(reconstruct) => reconstruct.execute(&mut client).await,
             Command::Crosschain(crosschain) => crosschain.execute(client).await,
-            Command::Mix(mix) => mix.execute(client).await,
+            Command::Mix(mix) => mix.execute(&mut client).await,
         }
     }
 
