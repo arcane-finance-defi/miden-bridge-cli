@@ -29,6 +29,8 @@ pub mod tags;
 pub mod transactions;
 pub mod utils;
 
+pub use notes::read_note_script_from_bytes;
+
 #[wasm_bindgen]
 pub struct WebClient {
     store: Option<Arc<WebStore>>,
