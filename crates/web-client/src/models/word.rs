@@ -39,6 +39,11 @@ impl Word {
 
         Word(native_word)
     }
+
+    #[wasm_bindgen(js_name = "felts")]
+    pub fn felts(&self) -> Vec<Felt> {
+        self.0.to_vec().iter().map(|f| f.into()).collect()
+    }
 }
 
 // CONVERSIONS
