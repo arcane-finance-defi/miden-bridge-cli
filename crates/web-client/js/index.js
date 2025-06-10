@@ -61,6 +61,7 @@ const {
   TransactionScriptInputPairArray,
   Word,
   WebClient: WasmWebClient, // Alias the WASM-exported WebClient
+  readNoteScriptFromBytes,
 } = wasm;
 
 export {
@@ -122,6 +123,7 @@ export {
   TransactionScriptInputPair,
   TransactionScriptInputPairArray,
   Word,
+  readNoteScriptFromBytes
 };
 
 /**

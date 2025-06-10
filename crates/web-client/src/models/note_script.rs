@@ -19,6 +19,12 @@ impl NoteScript {
     pub fn swap() -> Self {
         WellKnownNote::SWAP.script().into()
     }
+
+    #[wasm_bindgen(js_name = "rootHex")]
+    pub fn root_hex(&self) -> String {
+        self.0.root().to_hex()
+    }
+
     pub fn crosschain() -> Self {
         croschain_script().into()
     }

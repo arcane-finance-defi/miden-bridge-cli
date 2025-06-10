@@ -1,4 +1,4 @@
-import { WebClient as WasmWebClient } from "./crates/miden_client_web";
+import { WebClient as WasmWebClient, NoteScript } from "./crates/miden_client_web";
 
 export {
   Account,
@@ -80,3 +80,5 @@ export declare class WebClient extends WasmWebClient {
    */
   terminate(): void;
 }
+
+export declare function readNoteScriptFromBytes(bytes: Uint8Array): NoteScript;
