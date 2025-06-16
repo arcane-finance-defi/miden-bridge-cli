@@ -8,7 +8,7 @@ use miden_client::{Client, Felt, account::AccountId, asset::Asset, ZERO};
 use crate::crosschain::{build_crosschain_recipient, evm_address_to_felts, reconstruct_crosschain_note};
 use crate::errors::CliError;
 use crate::notes::check_note_existence;
-use crate::utils::bridge_note_tag;
+use crate::utils::{bridge_note_tag, parse_account_id};
 // RECONSTRUCT COMMAND
 // ================================================================================================
 
@@ -71,10 +71,8 @@ impl ReconstructCmd {
                 asset_amount: Some(asset_amount),
                 ..
             } => {
-                let receiver = AccountId::from_hex(account_id)
-                    .map_err(|e| CliError::AccountId(e, "Malformed Account id hex".to_string()))?;
-                let faucet_id = AccountId::from_hex(faucet_id)
-                    .map_err(|e| CliError::AccountId(e, "Malformed faucet id hex".to_string()))?;
+                let receiver = parse_account_id(&client, account_id).await?;
+                let faucet_id = parse_account_id(&client, faucet_id).await?;
                 let serial_number = parse_hex_string_as_word(serial_number)
                     .map_err(|_| CliError::InvalidArgument("serial-number".to_string()))?;
 
