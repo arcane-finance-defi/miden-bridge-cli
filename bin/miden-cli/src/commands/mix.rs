@@ -1,6 +1,6 @@
 use clap::Parser;
 use miden_objects::FieldElement;
-use miden_objects::note::{Note, NoteExecutionHint, NoteFile, NoteMetadata, NoteType};
+use miden_objects::note::{Note, NoteExecutionHint, NoteFile, NoteMetadata, NoteTag, NoteType};
 use miden_objects::utils::{Serializable, ToHex};
 use miden_client::{Client, Felt};
 use miden_client::store::{NoteExportType, NoteFilter};
@@ -103,6 +103,14 @@ impl MixCmd {
                     }
                 }
             }?;
+
+            let note_metadata: NoteMetadata = NoteMetadata::new(
+                faucet_id.clone(),
+                NoteType::Private,
+                bridge_note_tag(),
+                NoteExecutionHint::Always,
+                Felt::ZERO
+            ).map_err(|err| CliError::Internal(Box::new(err)))?;
 
             let note_text = NoteFile::NoteWithProof(
                 Note::new(
