@@ -38,6 +38,8 @@ jobs:
           components: rust-src 
 
       - name: Install & build web-client
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: true
         run: |
           cd crates/web-client
           yarn install --frozen-lockfile
