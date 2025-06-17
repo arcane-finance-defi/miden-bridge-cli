@@ -12,10 +12,14 @@ use miden_objects::{
     asset::{Asset, AssetVault},
 };
 use miden_tx::utils::{Deserializable, Serializable};
-use rusqlite::{Connection, Transaction, params, types::Value};
+use rusqlite::{Connection, Transaction, named_params, params, types::Value};
 
 use super::{SqliteStore, column_value_as_u64, u64_to_value};
-use crate::store::{AccountRecord, AccountStatus, StoreError};
+use crate::{
+    insert_sql,
+    store::{AccountRecord, AccountStatus, StoreError},
+    subst,
+};
 
 // TYPES
 // ================================================================================================
@@ -166,8 +170,8 @@ impl SqliteStore {
     ) -> Result<(), StoreError> {
         let tx = conn.transaction()?;
 
-        const QUERY: &str =
-            "INSERT OR REPLACE INTO foreign_account_code (account_id, code_root) VALUES (?, ?)";
+        const QUERY: &str = insert_sql!(foreign_account_code { account_id, code_root } | REPLACE);
+
         tx.execute(QUERY, params![account_id.to_hex(), code.commitment().to_string()])?;
 
         insert_account_code(&tx, code)?;
@@ -233,7 +237,20 @@ pub(super) fn insert_account_record(
 
     let account_seed = account_seed.map(|seed| seed.to_bytes());
 
-    const QUERY: &str = "INSERT OR REPLACE INTO accounts (id, code_root, storage_root, vault_root, nonce, committed, account_seed, account_commitment, locked) VALUES (?, ?, ?, ?, ?, ?, ?, ?, false)";
+    const QUERY: &str = insert_sql!(
+        accounts {
+            id,
+            code_root,
+            storage_root,
+            vault_root,
+            nonce,
+            committed,
+            account_seed,
+            account_commitment,
+            locked
+        } | REPLACE
+    );
+
     tx.execute(
         QUERY,
         params![
@@ -244,7 +261,8 @@ pub(super) fn insert_account_record(
             nonce,
             committed,
             account_seed,
-            commitment
+            commitment,
+            false,
         ],
     )?;
     Ok(())
@@ -253,8 +271,8 @@ pub(super) fn insert_account_record(
 /// Inserts an [`AccountCode`].
 fn insert_account_code(tx: &Transaction<'_>, account_code: &AccountCode) -> Result<(), StoreError> {
     let (code_root, code) = serialize_account_code(account_code);
-    const QUERY: &str = "INSERT OR IGNORE INTO account_code (root, code) VALUES (?, ?)";
-    tx.execute(QUERY, params![code_root, code,])?;
+    const QUERY: &str = insert_sql!(account_code { root, code } | IGNORE);
+    tx.execute(QUERY, params![code_root, code])?;
     Ok(())
 }
 
@@ -264,7 +282,7 @@ pub(super) fn insert_account_storage(
     account_storage: &AccountStorage,
 ) -> Result<(), StoreError> {
     let (storage_root, storage_slots) = serialize_account_storage(account_storage);
-    const QUERY: &str = "INSERT OR IGNORE INTO account_storage (root, slots) VALUES (?, ?)";
+    const QUERY: &str = insert_sql!(account_storage { root, slots } | IGNORE);
     tx.execute(QUERY, params![storage_root, storage_slots])?;
     Ok(())
 }
@@ -275,14 +293,29 @@ pub(super) fn insert_account_asset_vault(
     asset_vault: &AssetVault,
 ) -> Result<(), StoreError> {
     let (vault_root, assets) = serialize_account_asset_vault(asset_vault);
-    const QUERY: &str = "INSERT OR IGNORE INTO account_vaults (root, assets) VALUES (?, ?)";
+    const QUERY: &str = insert_sql!(account_vaults { root, assets } | IGNORE);
     tx.execute(QUERY, params![vault_root, assets])?;
     Ok(())
 }
 
-pub(super) fn lock_account(tx: &Transaction<'_>, account_id: AccountId) -> Result<(), StoreError> {
-    const QUERY: &str = "UPDATE accounts SET locked = true WHERE id = ?";
-    tx.execute(QUERY, params![account_id.to_hex()])?;
+/// Locks the account if the mismatched digest doesn't belong to a previous account state (stale
+/// data).
+pub(super) fn lock_account_on_unexpected_commitment(
+    tx: &Transaction<'_>,
+    account_id: &AccountId,
+    mismatched_digest: &Digest,
+) -> Result<(), StoreError> {
+    // Mismatched digests may be due to stale network data. If the mismatched digest is
+    // tracked in the db and corresponds to the mismatched account, it means we
+    // got a past update and shouldn't lock the account.
+    const QUERY: &str = "UPDATE accounts SET locked = true WHERE id = :account_id AND NOT EXISTS (SELECT 1 FROM accounts WHERE id = :account_id AND account_commitment = :digest)";
+    tx.execute(
+        QUERY,
+        named_params! {
+            ":account_id": account_id.to_hex(),
+            ":digest": mismatched_digest.to_string()
+        },
+    )?;
     Ok(())
 }
 

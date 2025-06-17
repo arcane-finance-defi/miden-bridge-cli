@@ -1,6 +1,6 @@
 use clap::Parser;
 use miden_objects::FieldElement;
-use miden_objects::note::{Note, NoteExecutionHint, NoteFile, NoteMetadata, NoteType};
+use miden_objects::note::{Note, NoteExecutionHint, NoteFile, NoteMetadata, NoteTag, NoteType};
 use miden_objects::utils::{Serializable, ToHex};
 use miden_client::{Client, Felt};
 use miden_client::store::{NoteExportType, NoteFilter};
@@ -73,12 +73,13 @@ impl MixCmd {
 
         if check_note_existence(client, &note_id).await
             .map_err(|e| CliError::Internal(Box::new(e)))? {
-
             let note_id = client.import_note(note_text).await
                 .map_err(|e| CliError::Internal(Box::new(e)))?;
 
             let note_id_hex = note_id.to_hex();
             println!("Reconstructed note id: {note_id_hex}");
+
+            client.sync_state().await?;
 
             let input_note = client.get_input_notes(NoteFilter::Unique(note_id))
                 .await?
@@ -96,16 +97,18 @@ impl MixCmd {
                 }
             }?;
 
+            let note_metadata: NoteMetadata = NoteMetadata::new(
+                faucet_id.clone(),
+                NoteType::Private,
+                bridge_note_tag(),
+                NoteExecutionHint::Always,
+                Felt::ZERO
+            ).map_err(|err| CliError::Internal(Box::new(err)))?;
+
             let note_text = NoteFile::NoteWithProof(
                 Note::new(
                     input_note.details().assets().clone(),
-                    NoteMetadata::new(
-                        faucet_id,
-                        NoteType::Private,
-                        bridge_note_tag(),
-                        NoteExecutionHint::Always,
-                        Felt::ZERO
-                    ).unwrap(),
+                    note_metadata,
                     input_note.details().recipient().clone()
                 ),
                 inclusion_proof
@@ -127,10 +130,8 @@ impl MixCmd {
                 .await.map_err(|e| CliError::Internal(Box::new(e)))?;
 
             println!("Generated tx id: {}", response.tx_id);
-
-            Ok(())
-        } else {
-            Err(CliError::InvalidArgument("Couldn't find a note onchain. Try later.".to_string()))
         }
+
+        Ok(())
     }
 }

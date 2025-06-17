@@ -93,6 +93,8 @@ impl WebClient {
             Arc::new(keystore.clone()),
             false,
             MIXER_DEFAULT_URL.to_string(),
+            None,
+            None,
         ));
         self.store = Some(web_store);
         self.keystore = Some(keystore);

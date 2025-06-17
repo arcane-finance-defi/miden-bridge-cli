@@ -4,7 +4,7 @@
 //! accounts and their state, and facilitates executing, proving, and submitting transactions.
 //!
 //! For a protocol-level overview and guides for getting started, please visit the official
-//! [Polygon Miden docs](https://0xpolygonmiden.github.io/miden-docs/).
+//! [Miden docs](https://0xMiden.github.io/miden-docs/).
 //!
 //! ## Overview
 //!
@@ -43,7 +43,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! miden-client = "0.8"
+//! miden-client = "0.9"
 //! ```
 //!
 //! ## Example
@@ -76,16 +76,24 @@
 //! let rng = RpoRandomCoin::new(coin_seed.map(Felt::new));
 //! let keystore = FilesystemKeyStore::new("path/to/keys/directory".try_into()?)?;
 //!
+//! // Determine the number of blocks to consider a transaction stale.
+//! // 20 is simply an example value.
+//! let tx_graceful_blocks = Some(20);
+//! // Determine the maximum number of blocks that the client can be behind from the network.
+//! // 256 is simply an example value.
+//! let max_block_number_delta = Some(256);
+//!
 //! // Instantiate the client using a Tonic RPC client
 //! let endpoint = Endpoint::new("https".into(), "localhost".into(), Some(57291));
-//! let mixer_endpoint = "https://localhost:8001".to_string();
 //! let client: Client = Client::new(
 //!     Arc::new(TonicRpcClient::new(&endpoint, 10_000)),
 //!     Box::new(rng),
 //!     store,
 //!     Arc::new(keystore),
 //!     false, // Set to true for debug mode, if needed.
-//!     mixer_endpoint,
+//!     "http://localhost:8000".to_string(),
+//!     tx_graceful_blocks,
+//!     max_block_number_delta,
 //! );
 //!
 //! # Ok(())
@@ -99,7 +107,7 @@
 
 #[macro_use]
 extern crate alloc;
-use alloc::boxed::Box;
+use alloc::{boxed::Box, string::String};
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -115,8 +123,8 @@ pub mod transaction;
 #[cfg(feature = "std")]
 pub mod builder;
 
-#[cfg(test)]
-pub mod mock;
+#[cfg(feature = "testing")]
+mod test_utils;
 
 #[cfg(test)]
 pub mod tests;
@@ -154,6 +162,7 @@ pub mod block {
 /// the `miden_objects` crate.
 pub mod crypto {
     pub use miden_objects::{
+        Digest,
         crypto::{
             dsa::rpo_falcon512::SecretKey,
             merkle::{
@@ -162,7 +171,6 @@ pub mod crypto {
             },
             rand::{FeltRng, RpoRandomCoin},
         },
-        Digest,
     };
 }
 
@@ -186,20 +194,22 @@ pub mod utils {
 #[cfg(feature = "testing")]
 pub mod testing {
     pub use miden_objects::testing::*;
+
+    pub use crate::test_utils::*;
 }
 
 use alloc::sync::Arc;
-use alloc::string::String;
 use miden_objects::crypto::rand::FeltRng;
 use miden_objects::note::{NoteId, NoteInclusionProof};
 use miden_tx::{
-    auth::TransactionAuthenticator, DataStore, LocalTransactionProver, TransactionExecutor,
+    DataStore, LocalTransactionProver, TransactionExecutor, TransactionMastStore,
+    auth::TransactionAuthenticator,
 };
 use rand::RngCore;
 use rpc::NodeRpcClient;
 use store::{data_store::ClientDataStore, Store};
 use tracing::info;
-use crate::rpc::domain::note::NetworkNote;
+use crate::rpc::domain::note::FetchedNote;
 use crate::rpc::RpcError;
 // MIDEN CLIENT
 // ================================================================================================
@@ -225,8 +235,15 @@ pub struct Client {
     tx_prover: Arc<LocalTransactionProver>,
     /// An instance of a [`TransactionExecutor`] that will be used to execute transactions.
     tx_executor: TransactionExecutor,
+    /// A MAST store, used to provide code inputs to the VM.
+    mast_store: Arc<TransactionMastStore>,
     /// Flag to enable the debug mode for scripts compilation and execution.
     in_debug_mode: bool,
+    /// The number of blocks that are considered old enough to discard pending transactions.
+    tx_graceful_blocks: Option<u32>,
+    /// Maximum number of blocks the client can be behind the network for transactions and account
+    /// proofs to be considered valid.
+    max_block_number_delta: Option<u32>,
     /// Mixer operator url
     mixer_url: String
 }
@@ -252,6 +269,10 @@ impl Client {
     /// - `in_debug_mode`: Instantiates the transaction executor (and in turn, its compiler) in
     ///   debug mode, which will enable debug logs for scripts compiled with this mode for easier
     ///   MASM debugging.
+    /// - `tx_graceful_blocks`: The number of blocks that are considered old enough to discard
+    ///   pending transactions.
+    /// - `max_block_number_delta`: Determines the maximum number of blocks that the client can be
+    ///   behind the network for transactions and account proofs to be considered valid.
     ///
     /// # Errors
     ///
@@ -262,11 +283,15 @@ impl Client {
         store: Arc<dyn Store>,
         authenticator: Arc<dyn TransactionAuthenticator>,
         in_debug_mode: bool,
-        mixer_url: String
+        mixer_url: String,
+        tx_graceful_blocks: Option<u32>,
+        max_block_number_delta: Option<u32>,
     ) -> Self {
-        let data_store = Arc::new(ClientDataStore::new(store.clone())) as Arc<dyn DataStore>;
+        let client_data_store = Arc::new(ClientDataStore::new(store.clone()));
+        let mast_store = client_data_store.mast_store();
+
         let authenticator = Some(authenticator);
-        let mut tx_executor = TransactionExecutor::new(data_store, authenticator);
+        let mut tx_executor = TransactionExecutor::new(client_data_store, authenticator);
         let tx_prover = Arc::new(LocalTransactionProver::default());
 
         if in_debug_mode {
@@ -281,7 +306,10 @@ impl Client {
             tx_prover,
             tx_executor,
             in_debug_mode,
-            mixer_url
+            mixer_url,
+            tx_graceful_blocks,
+            max_block_number_delta,
+            mast_store,
         }
     }
 
@@ -317,8 +345,8 @@ impl Client {
         let result = self.rpc_api.get_note_by_id(note_id).await;
 
         match result {
-            Ok(NetworkNote::Private(_, _, proof)) => Ok(Some(proof)),
-            Ok(NetworkNote::Public(_, proof)) => Ok(Some(proof)),
+            Ok(FetchedNote::Private(_, _, proof)) => Ok(Some(proof)),
+            Ok(FetchedNote::Public(_, proof)) => Ok(Some(proof)),
             Err(RpcError::NoteNotFound(_)) => Ok(None),
             Err(err) => Err(ClientError::RpcError(err))
         }

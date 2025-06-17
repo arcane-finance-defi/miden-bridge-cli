@@ -51,6 +51,10 @@ const CLIENT_CONFIG_FILE_NAME: &str = "miden-client.toml";
 /// Client binary name.
 pub const CLIENT_BINARY_NAME: &str = "miden";
 
+/// Number of blocks that must elapse after a transaction’s reference block before it is marked
+/// stale and discarded.
+const TX_GRACEFUL_BLOCK_DELTA: u32 = 20;
+
 /// Root CLI struct.
 #[derive(Parser, Debug)]
 #[clap(name = "Miden", about = "Miden client", version, rename_all = "kebab-case")]
@@ -137,6 +141,8 @@ impl Cli {
             Arc::new(keystore.clone()),
             in_debug_mode,
             cli_config.mixer_url.to_string(),
+            Some(TX_GRACEFUL_BLOCK_DELTA),
+            cli_config.max_block_number_delta,
         );
 
         // Execute CLI command
@@ -147,7 +153,7 @@ impl Cli {
             Command::Import(import) => import.execute(client, keystore).await,
             Command::ImportPublic(import_public) => import_public.execute(client, keystore).await,
             Command::Init(_) => Ok(()),
-            Command::Info => info::print_client_info(&client, &cli_config).await,
+            Command::Info => info::print_client_info(&client).await,
             Command::Notes(notes) => notes.execute(client).await,
             Command::Sync(sync) => sync.execute(client).await,
             Command::Tags(tags) => tags.execute(client).await,

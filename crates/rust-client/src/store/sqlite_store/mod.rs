@@ -11,24 +11,25 @@ use alloc::{
 };
 use std::{path::PathBuf, string::ToString};
 
-use deadpool_sqlite::{Config, Hook, HookError, Pool, Runtime};
+use db_management::{
+    pool_manager::{Pool, SqlitePoolManager},
+    utils::apply_migrations,
+};
 use miden_objects::{
     Digest, Word,
     account::{Account, AccountCode, AccountHeader, AccountId},
     block::{BlockHeader, BlockNumber},
     crypto::merkle::{InOrderIndex, MmrPeaks},
     note::{NoteTag, Nullifier},
-    transaction::TransactionId,
 };
-use rusqlite::{Connection, types::Value, vtab::array};
+use rusqlite::{Connection, types::Value};
 use tonic::async_trait;
 
 use super::{
-    AccountRecord, AccountStatus, ChainMmrNodeFilter, InputNoteRecord, NoteFilter,
-    OutputNoteRecord, Store, TransactionFilter,
+    AccountRecord, AccountStatus, InputNoteRecord, NoteFilter, OutputNoteRecord,
+    PartialBlockchainFilter, Store, TransactionFilter,
 };
 use crate::{
-    note::NoteUpdates,
     store::StoreError,
     sync::{NoteTagRecord, StateSyncUpdate},
     transaction::{TransactionRecord, TransactionStoreUpdate},
@@ -36,6 +37,7 @@ use crate::{
 
 mod account;
 mod chain_data;
+mod db_management;
 mod errors;
 mod note;
 mod sync;
@@ -58,38 +60,19 @@ impl SqliteStore {
 
     /// Returns a new instance of [Store] instantiated with the specified configuration options.
     pub async fn new(database_filepath: PathBuf) -> Result<Self, StoreError> {
-        let database_exists = database_filepath.exists();
-
-        let connection_cfg = Config::new(database_filepath);
-        let pool = connection_cfg
-            .builder(Runtime::Tokio1)
-            .map_err(|err| StoreError::DatabaseError(err.to_string()))?
-            .post_create(Hook::async_fn(move |conn, _| {
-                Box::pin(async move {
-                    // Feature used to support `IN` and `NOT IN` queries. We need to load this
-                    // module for every connection we create to the DB to
-                    // support the queries we want to run
-                    conn.interact(|conn| array::load_module(conn))
-                        .await
-                        .map_err(|_| HookError::message("Loading rarray module failed"))?
-                        .map_err(|err| HookError::message(err.to_string()))?;
-
-                    Ok(())
-                })
-            }))
+        let sqlite_pool_manager = SqlitePoolManager::new(database_filepath.clone());
+        let pool = Pool::builder(sqlite_pool_manager)
             .build()
-            .map_err(|err| StoreError::DatabaseError(err.to_string()))?;
+            .map_err(|e| StoreError::DatabaseError(e.to_string()))?;
 
-        if !database_exists {
-            pool.get()
-                .await
-                .map_err(|err| StoreError::DatabaseError(err.to_string()))?
-                .interact(|conn| conn.execute_batch(include_str!("store.sql")))
-                .await
-                .map_err(|err| StoreError::DatabaseError(err.to_string()))??;
-        }
+        let conn = pool.get().await.map_err(|e| StoreError::DatabaseError(e.to_string()))?;
 
-        Ok(Self { pool })
+        let _ = conn
+            .interact(apply_migrations)
+            .await
+            .map_err(|e| StoreError::DatabaseError(e.to_string()))?;
+
+        Ok(SqliteStore { pool })
     }
 
     /// Interacts with the database by executing the provided function on a connection from the
@@ -117,7 +100,7 @@ impl SqliteStore {
 //
 // To simplify, all implementations rely on inner SqliteStore functions that map 1:1 by name
 // This way, the actual implementations are grouped by entity types in their own sub-modules
-#[async_trait(?Send)]
+#[async_trait]
 impl Store for SqliteStore {
     fn get_current_timestamp(&self) -> Option<u64> {
         let now = chrono::Utc::now();
@@ -193,7 +176,7 @@ impl Store for SqliteStore {
     async fn insert_block_header(
         &self,
         block_header: &BlockHeader,
-        chain_mmr_peaks: MmrPeaks,
+        partial_blockchain_peaks: MmrPeaks,
         has_client_notes: bool,
     ) -> Result<(), StoreError> {
         let block_header = block_header.clone();
@@ -201,18 +184,22 @@ impl Store for SqliteStore {
             SqliteStore::insert_block_header(
                 conn,
                 &block_header,
-                &chain_mmr_peaks,
+                &partial_blockchain_peaks,
                 has_client_notes,
             )
         })
         .await
     }
 
+    async fn prune_irrelevant_blocks(&self) -> Result<(), StoreError> {
+        self.interact_with_connection(SqliteStore::prune_irrelevant_blocks).await
+    }
+
     async fn get_block_headers(
         &self,
-        block_numbers: &[BlockNumber],
+        block_numbers: &BTreeSet<BlockNumber>,
     ) -> Result<Vec<(BlockHeader, bool)>, StoreError> {
-        let block_numbers = block_numbers.to_vec();
+        let block_numbers = block_numbers.clone();
         self.interact_with_connection(move |conn| {
             SqliteStore::get_block_headers(conn, &block_numbers)
         })
@@ -223,29 +210,33 @@ impl Store for SqliteStore {
         self.interact_with_connection(SqliteStore::get_tracked_block_headers).await
     }
 
-    async fn get_chain_mmr_nodes(
+    async fn get_partial_blockchain_nodes(
         &self,
-        filter: ChainMmrNodeFilter,
+        filter: PartialBlockchainFilter,
     ) -> Result<BTreeMap<InOrderIndex, Digest>, StoreError> {
-        self.interact_with_connection(move |conn| SqliteStore::get_chain_mmr_nodes(conn, &filter))
-            .await
+        self.interact_with_connection(move |conn| {
+            SqliteStore::get_partial_blockchain_nodes(conn, &filter)
+        })
+        .await
     }
 
-    async fn insert_chain_mmr_nodes(
+    async fn insert_partial_blockchain_nodes(
         &self,
         nodes: &[(InOrderIndex, Digest)],
     ) -> Result<(), StoreError> {
         let nodes = nodes.to_vec();
-        self.interact_with_connection(move |conn| SqliteStore::insert_chain_mmr_nodes(conn, &nodes))
-            .await
+        self.interact_with_connection(move |conn| {
+            SqliteStore::insert_partial_blockchain_nodes(conn, &nodes)
+        })
+        .await
     }
 
-    async fn get_chain_mmr_peaks_by_block_num(
+    async fn get_partial_blockchain_peaks_by_block_num(
         &self,
         block_num: BlockNumber,
     ) -> Result<MmrPeaks, StoreError> {
         self.interact_with_connection(move |conn| {
-            SqliteStore::get_chain_mmr_peaks_by_block_num(conn, block_num)
+            SqliteStore::get_partial_blockchain_peaks_by_block_num(conn, block_num)
         })
         .await
     }
@@ -329,17 +320,6 @@ impl Store for SqliteStore {
         self.interact_with_connection(SqliteStore::get_unspent_input_note_nullifiers)
             .await
     }
-
-    async fn apply_nullifiers(
-        &self,
-        note_updates: NoteUpdates,
-        transactions_to_discard: Vec<TransactionId>,
-    ) -> Result<(), StoreError> {
-        self.interact_with_connection(move |conn| {
-            SqliteStore::apply_nullifiers(conn, &note_updates, &transactions_to_discard)
-        })
-        .await
-    }
 }
 
 // UTILS
@@ -347,7 +327,7 @@ impl Store for SqliteStore {
 
 /// Gets a `u64` value from the database.
 ///
-/// Sqlite uses `i64` as its internal representation format, and so when retrieving
+/// `Sqlite` uses `i64` as its internal representation format, and so when retrieving
 /// we need to make sure we cast as `u64` to get the original value
 pub fn column_value_as_u64<I: rusqlite::RowIndex>(
     row: &rusqlite::Row<'_>,
@@ -363,8 +343,8 @@ pub fn column_value_as_u64<I: rusqlite::RowIndex>(
 
 /// Converts a `u64` into a [Value].
 ///
-/// Sqlite uses `i64` as its internal representation format. Note that the `as` operator performs a
-/// lossless conversion from `u64` to `i64`.
+/// `Sqlite` uses `i64` as its internal representation format. Note that the `as` operator performs
+/// a lossless conversion from `u64` to `i64`.
 pub fn u64_to_value(v: u64) -> Value {
     #[allow(
         clippy::cast_possible_wrap,
@@ -378,8 +358,32 @@ pub fn u64_to_value(v: u64) -> Value {
 
 #[cfg(test)]
 pub mod tests {
+    use std::boxed::Box;
+
     use super::SqliteStore;
-    use crate::mock::create_test_store_path;
+    use crate::{store::Store, tests::create_test_store_path};
+
+    fn assert_send_sync<T: Send + Sync>() {}
+
+    #[test]
+    fn is_send_sync() {
+        assert_send_sync::<SqliteStore>();
+        assert_send_sync::<Box<dyn Store>>();
+    }
+
+    // Function that returns a `Send` future from a dynamic trait that must be `Sync`.
+    async fn dyn_trait_send_fut(store: Box<dyn Store>) {
+        // This wouldn't compile if `get_tracked_block_headers` doesn't return a `Send` future.
+        let res = store.get_tracked_block_headers().await;
+        assert!(res.is_ok());
+    }
+
+    #[tokio::test]
+    async fn future_is_send() {
+        let client = SqliteStore::new(create_test_store_path()).await.unwrap();
+        let client: Box<SqliteStore> = client.into();
+        tokio::task::spawn(async move { dyn_trait_send_fut(client).await });
+    }
 
     pub(crate) async fn create_test_store() -> SqliteStore {
         SqliteStore::new(create_test_store_path()).await.unwrap()

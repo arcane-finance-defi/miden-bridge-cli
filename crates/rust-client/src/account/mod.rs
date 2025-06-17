@@ -45,17 +45,18 @@ use miden_objects::{
 use super::Client;
 use crate::{
     errors::ClientError,
-    rpc::domain::account::AccountDetails,
+    rpc::domain::account::FetchedAccount,
     store::{AccountRecord, AccountStatus},
 };
 
+pub mod procedure_roots;
+
 // RE-EXPORTS
 // ================================================================================================
-pub mod procedure_roots;
 
 pub use miden_objects::account::{
     Account, AccountBuilder, AccountCode, AccountDelta, AccountFile, AccountHeader, AccountId,
-    AccountStorage, AccountStorageMode, AccountType, StorageSlot,
+    AccountStorage, AccountStorageMode, AccountType, StorageMap, StorageSlot,
 };
 
 pub mod component {
@@ -66,7 +67,8 @@ pub mod component {
     };
     pub use miden_objects::account::{
         AccountComponent, AccountComponentMetadata, AccountComponentTemplate, FeltRepresentation,
-        InitStorageData, StorageEntry, StorageSlotType, WordRepresentation,
+        InitStorageData, StorageEntry, StorageSlotType, StorageValueName, TemplateType,
+        WordRepresentation,
     };
 }
 
@@ -176,13 +178,13 @@ impl Client {
     /// - If the account is private.
     /// - There was an error sending the request to the network.
     pub async fn import_account_by_id(&mut self, account_id: AccountId) -> Result<(), ClientError> {
-        let account_details = self.rpc_api.get_account_details(account_id).await?;
+        let fetched_account = self.rpc_api.get_account_details(account_id).await?;
 
-        let account = match account_details {
-            AccountDetails::Private(..) => {
+        let account = match fetched_account {
+            FetchedAccount::Private(..) => {
                 return Err(ClientError::AccountIsPrivate(account_id));
             },
-            AccountDetails::Public(account, ..) => account,
+            FetchedAccount::Public(account, ..) => account,
         };
 
         self.add_account(&account, None, true).await
@@ -321,7 +323,7 @@ pub mod tests {
         },
     };
 
-    use crate::mock::create_test_client;
+    use crate::tests::create_test_client;
 
     fn create_account_data(account_id: u128) -> AccountFile {
         let account =

@@ -61,16 +61,24 @@ before(async () => {
     async (rpcPort, remoteProverPort) => {
       const {
         Account,
+        AccountBuilder,
+        AccountComponent,
         AccountHeader,
         AccountId,
         AccountStorageMode,
+        AccountType,
         AdviceMap,
+        Assembler,
+        AssemblerUtils,
         AuthSecretKey,
         ConsumableNoteRecord,
         Felt,
         FeltArray,
         FungibleAsset,
+        Library,
         Note,
+        NoteAndArgs,
+        NoteAndArgsArray,
         NoteAssets,
         NoteConsumability,
         NoteExecutionHint,
@@ -88,12 +96,16 @@ before(async () => {
         OutputNote,
         OutputNotesArray,
         Rpo256,
+        StorageMap,
+        StorageSlot,
         TestUtils,
         TransactionFilter,
+        TransactionKernel,
         TransactionProver,
         TransactionRequest,
         TransactionResult,
         TransactionRequestBuilder,
+        TransactionScript,
         TransactionScriptInputPair,
         TransactionScriptInputPairArray,
         Word,
@@ -108,16 +120,24 @@ before(async () => {
 
       window.client = client;
       window.Account = Account;
+      window.AccountBuilder = AccountBuilder;
+      window.AccountComponent = AccountComponent;
       window.AccountHeader = AccountHeader;
       window.AccountId = AccountId;
       window.AccountStorageMode = AccountStorageMode;
+      window.AccountType = AccountType;
       window.AdviceMap = AdviceMap;
+      window.Assembler = Assembler;
+      window.AssemblerUtils = AssemblerUtils;
       window.AuthSecretKey = AuthSecretKey;
       window.ConsumableNoteRecord = ConsumableNoteRecord;
       window.Felt = Felt;
       window.FeltArray = FeltArray;
       window.FungibleAsset = FungibleAsset;
+      window.Library = Library;
       window.Note = Note;
+      window.NoteAndArgs = NoteAndArgs;
+      window.NoteAndArgsArray = NoteAndArgsArray;
       window.NoteAssets = NoteAssets;
       window.NoteConsumability = NoteConsumability;
       window.NoteExecutionHint = NoteExecutionHint;
@@ -135,12 +155,16 @@ before(async () => {
       window.OutputNote = OutputNote;
       window.OutputNotesArray = OutputNotesArray;
       window.Rpo256 = Rpo256;
+      window.StorageMap = StorageMap;
+      window.StorageSlot = StorageSlot;
       window.TestUtils = TestUtils;
       window.TransactionFilter = TransactionFilter;
+      window.TransactionKernel = TransactionKernel;
       window.TransactionProver = TransactionProver;
       window.TransactionRequest = TransactionRequest;
       window.TransactionResult = TransactionResult;
       window.TransactionRequestBuilder = TransactionRequestBuilder;
+      window.TransactionScript = TransactionScript;
       window.TransactionScriptInputPair = TransactionScriptInputPair;
       window.TransactionScriptInputPairArray = TransactionScriptInputPairArray;
       window.WebClient = WebClient;
@@ -159,8 +183,8 @@ before(async () => {
 
       window.helpers.waitForTransaction = async (
         transactionId,
-        maxWaitTime = 20000,
-        delayInterval = 1000
+        maxWaitTime = 10000,
+        delayInterval = 100
       ) => {
         const client = window.client;
         let timeWaited = 0;
@@ -169,13 +193,13 @@ before(async () => {
             throw new Error("Timeout waiting for transaction");
           }
           await client.syncState();
-          const uncomittedTransactions = await client.getTransactions(
-            window.TransactionFilter.uncomitted()
+          const uncommittedTransactions = await client.getTransactions(
+            window.TransactionFilter.uncommitted()
           );
-          let uncomittedTransactionIds = uncomittedTransactions.map(
+          let uncommittedTransactionIds = uncommittedTransactions.map(
             (transaction) => transaction.id().toHex()
           );
-          if (!uncomittedTransactionIds.includes(transactionId)) {
+          if (!uncommittedTransactionIds.includes(transactionId)) {
             break;
           }
           await new Promise((r) => setTimeout(r, delayInterval));
@@ -186,6 +210,7 @@ before(async () => {
       window.helpers.refreshClient = async (initSeed) => {
         const client = await WebClient.createClient(rpcUrl, initSeed);
         window.client = client;
+        await window.client.syncState();
       };
     },
     LOCAL_MIDEN_NODE_PORT,

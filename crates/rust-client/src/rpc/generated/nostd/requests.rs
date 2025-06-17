@@ -143,12 +143,26 @@ pub struct GetNotesByIdRequest {
     #[prost(message, repeated, tag = "1")]
     pub note_ids: ::prost::alloc::vec::Vec<super::digest::Digest>,
 }
+/// Returns peaks for the given block number, or the chain tip if a block number not provided.
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct GetCurrentBlockchainDataRequest {
+    /// Last client-known block number. If not specified, the latest header and peaks will be retrieved.
+    #[prost(fixed32, optional, tag = "1")]
+    pub block_num: ::core::option::Option<u32>,
+}
 /// Returns the latest state of an account with the specified ID.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetAccountDetailsRequest {
     /// Account ID to get details.
     #[prost(message, optional, tag = "1")]
     pub account_id: ::core::option::Option<super::account::AccountId>,
+}
+/// Returns the latest state of a network account based on the account ID prefix.
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct GetNetworkAccountDetailsByPrefixRequest {
+    /// Account ID prefix.
+    #[prost(fixed32, tag = "1")]
+    pub account_id_prefix: u32,
 }
 /// Retrieves block data by given block number.
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
@@ -212,5 +226,61 @@ pub mod get_account_proofs_request {
         /// A list of map keys (Digests) associated with this storage slot.
         #[prost(message, repeated, tag = "2")]
         pub map_keys: ::prost::alloc::vec::Vec<super::super::digest::Digest>,
+    }
+}
+/// Returns a list of unconsumed network notes using pagination.
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct GetUnconsumedNetworkNotesRequest {
+    /// An opaque token used to paginate through the notes.
+    ///
+    /// This should be null on the first call, and set to the response
+    /// token until the response token is null, at which point all data
+    /// has been fetched.
+    #[prost(uint64, optional, tag = "1")]
+    pub page_token: ::core::option::Option<u64>,
+    /// Number of notes to retrieve per page.
+    #[prost(uint64, tag = "2")]
+    pub page_size: u64,
+}
+/// Submit a list of network notes to the network transaction builder.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SubmitNetworkNotesRequest {
+    /// Id of the transaction that created the notes.
+    #[prost(message, optional, tag = "1")]
+    pub transaction_id: ::core::option::Option<super::digest::Digest>,
+    /// The network notes to submit.
+    #[prost(message, repeated, tag = "2")]
+    pub note: ::prost::alloc::vec::Vec<super::note::NetworkNote>,
+}
+/// Update the status of network notes that were consumed externally.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateNetworkNotesRequest {
+    /// Id of the transaction that consumed the notes.
+    #[prost(message, optional, tag = "1")]
+    pub transaction_id: ::core::option::Option<super::digest::Digest>,
+    /// The output nullifiers.
+    #[prost(message, repeated, tag = "2")]
+    pub nullifiers: ::prost::alloc::vec::Vec<super::digest::Digest>,
+}
+/// Update network transaction builder with transaction status changes.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTransactionStatusRequest {
+    /// The list of updates for each transaction.
+    #[prost(message, repeated, tag = "1")]
+    pub updates: ::prost::alloc::vec::Vec<
+        update_transaction_status_request::TransactionUpdate,
+    >,
+}
+/// Nested message and enum types in `UpdateTransactionStatusRequest`.
+pub mod update_transaction_status_request {
+    /// Represents the update for a single transaction.
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct TransactionUpdate {
+        /// Id of the transaction to update.
+        #[prost(message, optional, tag = "1")]
+        pub transaction_id: ::core::option::Option<super::super::digest::Digest>,
+        /// New status of the transaction.
+        #[prost(enumeration = "super::super::transaction::TransactionStatus", tag = "2")]
+        pub status: i32,
     }
 }

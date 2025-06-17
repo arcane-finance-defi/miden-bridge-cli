@@ -18,6 +18,7 @@ const importWalletFromSeed = async (
   return await testingPage.evaluate(
     async (_serializedWalletSeed, _mutable) => {
       const client = window.client;
+      await client.syncState();
       const _walletSeed = new Uint8Array(_serializedWalletSeed);
       const account = await client.importPublicAccountFromSeed(
         _walletSeed,
@@ -31,6 +32,19 @@ const importWalletFromSeed = async (
     serializedWalletSeed,
     mutable
   );
+};
+
+const importAccountById = async (accountId: string) => {
+  return await testingPage.evaluate(async (id) => {
+    const client = window.client;
+    const _accountId = window.AccountId.fromHex(id);
+    await client.importAccountById(_accountId);
+    const account = await client.getAccount(_accountId);
+    return {
+      accountId: account?.id().toString(),
+      accountCommitment: account?.commitment().toHex(),
+    };
+  }, accountId);
 };
 
 describe("import from seed", () => {
@@ -70,6 +84,46 @@ describe("import from seed", () => {
       initialWallet.id
     );
 
+    const restoredBalance = await getAccountBalance(
+      initialWallet.id,
+      faucet.id
+    );
+
+    expect(restoredBalance.toString()).to.equal(initialBalance);
+    expect(restoredAccountCommitment).to.equal(initialCommitment);
+  });
+});
+
+describe("import public account by id", () => {
+  it("should import public account from id", async () => {
+    const walletSeed = new Uint8Array(32);
+    crypto.getRandomValues(walletSeed);
+
+    const mutable = false;
+    const storageMode = StorageMode.PUBLIC;
+
+    const initialWallet = await createNewWallet({
+      storageMode,
+      mutable,
+      walletSeed,
+    });
+    const faucet = await createNewFaucet();
+    const { targetAccountBalanace: initialBalance } =
+      await fundAccountFromFaucet(initialWallet.id, faucet.id);
+    const { commitment: initialCommitment } = await getAccount(
+      initialWallet.id
+    );
+
+    await clearStore();
+
+    const { accountId: restoredAccountId } = await importAccountById(
+      initialWallet.id
+    );
+    expect(restoredAccountId).to.equal(initialWallet.id);
+
+    const { commitment: restoredAccountCommitment } = await getAccount(
+      initialWallet.id
+    );
     const restoredBalance = await getAccountBalance(
       initialWallet.id,
       faucet.id

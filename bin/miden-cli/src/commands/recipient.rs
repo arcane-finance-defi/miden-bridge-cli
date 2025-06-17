@@ -10,6 +10,7 @@ use crate::errors::CliError;
 use crate::crosschain::{build_crosschain_recipient, evm_address_to_felts};
 use std::fmt::Display;
 use clap::ValueEnum;
+use crate::utils::parse_account_id;
 // RECIPIENT COMMAND
 // ================================================================================================
 
@@ -56,8 +57,7 @@ impl RecipientCmd {
                 account_id: Some(account_id),
                 ..
             } => {
-                let receiver = AccountId::from_hex(account_id)
-                    .map_err(|e| CliError::AccountId(e, "Malformed Account id hex".to_string()))?;
+                let receiver = parse_account_id(&client, account_id).await?;
 
                 let recipient = build_p2id_recipient(receiver, serial_number)
                     .map_err(|e| CliError::Internal(Box::new(e)))?;
