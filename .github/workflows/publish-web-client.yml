@@ -22,13 +22,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Configure git submodules
-        run: git config url."https://".insteadOf "ssh://git@"
+      - name: Configure git submodules url
+        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          # Defaults to the user or organization that owns the workflow file
+          scope: '@arcane-finance-defi'
 
       - name: Set up Rust and wasm target
         uses: actions-rs/toolchain@v1
