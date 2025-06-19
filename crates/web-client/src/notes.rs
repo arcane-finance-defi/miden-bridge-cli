@@ -4,7 +4,8 @@ use miden_objects::{
     Digest,
     note::{NoteId, NoteScript as NativeNoteScript},
 };
-use miden_objects::utils::Deserializable;
+use miden_objects::note::NoteFile;
+use miden_objects::utils::{Deserializable, Serializable};
 use miden_objects::vm::Program;
 use wasm_bindgen::prelude::*;
 
@@ -13,6 +14,8 @@ use crate::models::account_id::AccountId;
 use crate::models::consumable_note_record::ConsumableNoteRecord;
 use crate::models::input_note_record::InputNoteRecord;
 use crate::models::note_filter::NoteFilter;
+use crate::models::note_id::NoteId as NoteIdModel;
+use crate::models::note::Note;
 use crate::{WebClient, js_error_with_context};
 
 #[wasm_bindgen]
@@ -113,6 +116,53 @@ impl WebClient {
                 .map_err(|err| js_error_with_context(err, "failed to get consumable notes"))?;
 
             Ok(result.into_iter().map(Into::into).collect())
+        } else {
+            Err(JsValue::from_str("Client not initialized"))
+        }
+    }
+
+    #[wasm_bindgen(js_name = "checkNoteCommitedByNoteId")]
+    pub async fn check_note_commited_by_note_id(
+        &mut self,
+        id: NoteIdModel
+    ) -> Result<bool, JsValue> {
+        if let Some(client) = self.get_mut_inner() {
+            let result = client
+                .get_note_inclusion_proof(id.into())
+                .await
+                .map_err(|err| js_error_with_context(err, "failed to get note inclusion proof"))?;
+
+            match result {
+                Some(_) => Ok(true),
+                None => Ok(false),
+            }
+        } else {
+            Err(JsValue::from_str("Client not initialized"))
+        }
+    }
+
+    #[wasm_bindgen(js_name = "exportNoteWithInclusionProof")]
+    pub async fn export_note_with_inclusion_proof(
+        &mut self,
+        note: Note
+    ) -> Result<Vec<u8>, JsValue> {
+        if let Some(client) = self.get_mut_inner() {
+            let proof = client
+                .get_note_inclusion_proof(note.clone().id().into())
+                .await
+                .map_err(|err| js_error_with_context(err, "failed to get note inclusion proof"))?;
+
+            if let Some(proof) = proof {
+                let file = NoteFile::NoteWithProof(
+                        note.into(),
+                        proof
+                    );
+
+                Ok(file.to_bytes())
+            } else {
+                Err(JsValue::from_str("Note not commited"))
+            }
+
         } else {
             Err(JsValue::from_str("Client not initialized"))
         }
