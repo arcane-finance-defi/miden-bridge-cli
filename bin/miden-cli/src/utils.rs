@@ -11,10 +11,10 @@ use tracing::info;
 use miden_client::utils::DeserializationError;
 use super::{CLIENT_CONFIG_FILE_NAME, config::CliConfig, get_account_with_id_prefix};
 use crate::{errors::CliError, faucet_details_map::FaucetDetailsMap};
+use miden_bridge::notes::BRIDGE_USECASE;
 
 
 pub(crate) fn bridge_note_tag() -> NoteTag {
-    const BRIDGE_USECASE: u16 = 14594;
     NoteTag::for_local_use_case(BRIDGE_USECASE, 0).unwrap()
 }
 pub(crate) const SHARED_TOKEN_DOCUMENTATION: &str = "There are two accepted formats for the asset:

@@ -1,15 +1,12 @@
-use clap::Parser;
-use miden_bridge::notes::bridge::croschain;
 use miden_lib::note::utils::build_p2id_recipient;
 use miden_objects::crypto::utils::word_to_hex;
-use miden_objects::FieldElement;
-use miden_objects::note::{NoteInputs, NoteRecipient};
-use miden_client::{Client, account::AccountId, Felt};
+use miden_client::Client;
 use miden_client::crypto::FeltRng;
 use crate::errors::CliError;
-use crate::crosschain::{build_crosschain_recipient, evm_address_to_felts};
+use crate::crosschain::build_crosschain_recipient;
 use std::fmt::Display;
-use clap::ValueEnum;
+use clap::{Parser, ValueEnum};
+use miden_bridge::utils::evm_address_to_felts;
 use crate::utils::parse_account_id;
 // RECIPIENT COMMAND
 // ================================================================================================

@@ -1,11 +1,10 @@
 use clap::{Parser, ValueEnum};
 use miden_lib::note::utils::build_p2id_recipient;
 use miden_objects::asset::FungibleAsset;
-use miden_objects::crypto::utils::word_to_hex;
-use miden_objects::note::{Note, NoteAssets, NoteDetails, NoteExecutionHint, NoteExecutionMode, NoteFile, NoteMetadata, NoteTag, NoteType};
+use miden_objects::note::{NoteAssets, NoteDetails, NoteFile};
 use miden_objects::utils::parse_hex_string_as_word;
-use miden_client::{Client, Felt, account::AccountId, asset::Asset, ZERO};
-use crate::crosschain::{build_crosschain_recipient, evm_address_to_felts, reconstruct_crosschain_note};
+use miden_client::Client;
+use crate::crosschain::reconstruct_crosschain_note;
 use crate::errors::CliError;
 use crate::notes::check_note_existence;
 use crate::utils::{bridge_note_tag, parse_account_id};
