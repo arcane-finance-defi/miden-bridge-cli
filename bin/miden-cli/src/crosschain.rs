@@ -3,6 +3,7 @@ use thiserror::Error;
 use alloy_primitives::{hex, Address};
 use alloy_primitives::hex::FromHex;
 use miden_bridge::notes::bridge::croschain;
+use miden_bridge::utils::evm_address_to_felts;
 use miden_objects::{AccountIdError, AssetError, Felt, FieldElement, NoteError, StarkField, Word};
 use miden_objects::account::AccountId;
 use miden_objects::asset::FungibleAsset;
@@ -17,25 +18,6 @@ pub enum AddressFormatError {
     FeltDeserializationError(#[from] DeserializationError),
     #[error(transparent)]
     FmtError(#[from] fmt::Error),
-}
-pub fn evm_address_to_felts(address: String) -> Result<[Felt; 3], AddressFormatError> {
-
-    let evm_dest_address = Address::from_hex(address.as_str())
-        .map_err(AddressFormatError::MalformedEvmAddress)?;
-
-    let address_felts = [
-        Felt::try_from(
-            &evm_dest_address.0[..8]
-        ).map_err(AddressFormatError::FeltDeserializationError)?,
-        Felt::try_from(
-            &evm_dest_address.0[8..16]
-        ).map_err(AddressFormatError::FeltDeserializationError)?,
-        Felt::from_bytes_with_padding(
-            &evm_dest_address.0[16..20]
-        )
-    ];
-
-    Ok(address_felts)
 }
 
 pub fn build_crosschain_recipient(
