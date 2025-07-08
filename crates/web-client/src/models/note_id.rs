@@ -1,6 +1,6 @@
 use miden_objects::note::NoteId as NativeNoteId;
 use wasm_bindgen::prelude::*;
-
+use crate::js_error_with_context;
 use super::rpo_digest::RpoDigest;
 
 #[derive(Clone)]
@@ -12,6 +12,13 @@ impl NoteId {
     #[wasm_bindgen(constructor)]
     pub fn new(recipient_digest: &RpoDigest, asset_commitment_digest: &RpoDigest) -> NoteId {
         NoteId(NativeNoteId::new(recipient_digest.into(), asset_commitment_digest.into()))
+    }
+
+    #[wasm_bindgen(js_name = "fromHex")]
+    pub fn from_hex(hex: &str) -> Result<NoteId, JsValue> {
+        NativeNoteId::try_from_hex(hex)
+            .map_err(|err| js_error_with_context(err, "cannot convert hex to note id"))
+            .map(NoteId::from)
     }
 
     #[wasm_bindgen(js_name = "toString")]
