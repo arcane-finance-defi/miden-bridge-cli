@@ -54,10 +54,10 @@ jobs:
         continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA_TAG: ${{ github.sha }}
         run: |
           cd crates/web-client
-          npm unpublish --tag latest
-          npm publish --tag latest
+          npm publish --tag $SHA_TAG
 
       - name: Done
         run: echo "✅ Build complete"
