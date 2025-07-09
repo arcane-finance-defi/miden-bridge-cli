@@ -56,7 +56,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd crates/web-client
-          npm publish --tag latest
+          npm publish --tag latest -f
 
       - name: Done
         run: echo "✅ Build complete"
