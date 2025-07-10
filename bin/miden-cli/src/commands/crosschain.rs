@@ -1,8 +1,10 @@
 use clap::Parser;
 use miden_client::{Client, account::AccountId, Felt};
 use alloy_primitives::{Address, hex::FromHex};
+use miden_bridge::notes::BRIDGE_USECASE;
 use miden_objects::StarkField;
 use miden_bridge::notes::crosschain::new_crosschain_note;
+use miden_objects::note::NoteTag;
 use miden_objects::transaction::OutputNote;
 use miden_client::crypto::FeltRng;
 use miden_client::transaction::TransactionRequestBuilder;
@@ -70,7 +72,8 @@ impl CrosschainCmd {
             address_felts,
             faucet_id,
             self.asset_amount,
-            sender
+            sender,
+            NoteTag::for_local_use_case(BRIDGE_USECASE, 0).unwrap()
         ).map_err(|e| CliError::Internal(Box::new(e)))?;
 
         let tx_request = TransactionRequestBuilder::new()
