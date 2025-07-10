@@ -1,1 +1,1 @@
-pub const MIXER_DEFAULT_URL: &str = "http://156.67.63.214:8001";
+pub const MIXER_DEFAULT_URL: &str = "https://miden-api.arcane.finance:8001";

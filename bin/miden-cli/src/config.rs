@@ -42,8 +42,6 @@ pub struct CliConfig {
     /// Maximum number of blocks the client can be behind the network for transactions and account
     /// proofs to be considered valid.
     pub max_block_number_delta: Option<u32>,
-    /// Mixer offchain operator url
-    pub mixer_url: CliEndpoint
 }
 
 // Make `ClientConfig` a provider itself for composability.
@@ -80,7 +78,6 @@ impl Default for CliConfig {
             component_template_directory: Path::new(DEFAULT_COMPONENT_TEMPLATE_DIR).to_path_buf(),
             mixer_url: MIXER_DEFAULT_URL.try_into().unwrap(),
             max_block_number_delta: None,
-            mixer_url: MIXER_DEFAULT_URL.try_into().unwrap(),
         }
     }
 }

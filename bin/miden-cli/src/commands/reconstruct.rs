@@ -94,11 +94,11 @@ impl ReconstructCmd {
                 let note_id_hex = note_id.to_hex();
                 println!("Reconstructed note id: {note_id_hex}");
 
-                Ok(NoteFile::NoteDetails {
+                Ok((NoteFile::NoteDetails {
                     details: note_details,
                     after_block_num: 0.into(),
                     tag: Some(note_tag)
-                })
+                }, note_id))
             }
             Self {
                 note_type: ReconstructType::CROSSCHAIN,
@@ -116,7 +116,7 @@ impl ReconstructCmd {
                     dest_chain,
                     dest_address,
                     faucet_id,
-                    asset_amount
+                    asset_amount,
                 ).await.map_err(|e| CliError::Internal(Box::new(e)))
             },
             _ => Err(CliError::Input("Wrong arguments set".to_string()))
