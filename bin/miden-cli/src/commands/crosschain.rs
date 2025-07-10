@@ -1,6 +1,7 @@
 use clap::Parser;
 use miden_client::{Client, account::AccountId, Felt};
 use alloy_primitives::{Address, hex::FromHex};
+use miden_bridge::notes::BRIDGE_USECASE;
 use miden_objects::StarkField;
 use miden_bridge::notes::crosschain::new_crosschain_note;
 use miden_objects::note::NoteTag;
@@ -10,7 +11,6 @@ use miden_client::transaction::TransactionRequestBuilder;
 use crate::commands::new_transactions::execute_transaction;
 use crate::errors::CliError;
 use crate::utils::{bridge_note_tag, get_input_acc_id_by_prefix_or_default};
-use crate::utils::get_input_acc_id_by_prefix_or_default;
 
 // ACCOUNT COMMAND
 // ================================================================================================

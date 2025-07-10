@@ -47,7 +47,11 @@ pub struct MixCmd {
 
 #[derive(Debug, Deserialize, Serialize)]
 struct MixRequest {
-    note_text: String,
+    dest_chain_id: u64,
+    dest_address: String,
+    serial_num_hex: String,
+    bridge_serial_num_hex: String,
+    amount: u64,
     account_id: String,
 }
 
@@ -68,16 +72,10 @@ impl MixCmd {
             &self.asset_amount
         ).await.map_err(|e| CliError::Internal(Box::new(e)))?;
 
-        let note_id = match &note_text {
-            NoteFile::NoteId(id) => id,
-            NoteFile::NoteDetails { details, .. } => &details.id(),
-            NoteFile::NoteWithProof(note, _) => &note.id()
-        };
-
         let faucet_id = miden_objects::account::AccountId::from_hex(self.faucet_id.as_str())
             .map_err(|e| CliError::AccountId(e, "Malformed faucet id hex".to_string()))?;
 
-        if check_note_existence(client, note_id).await
+        if check_note_existence(client, &note_id).await
             .map_err(|e| CliError::Internal(Box::new(e)))? {
 
             let note_id = client.import_note(note_text).await
@@ -130,12 +128,16 @@ impl MixCmd {
             let note_text = note_text.to_bytes().to_hex();
 
             let request = MixRequest {
-                note_text,
+                dest_chain_id: self.dest_chain.into(),
+                dest_address: self.dest_address.clone(),
+                serial_num_hex: self.serial_number.clone(),
+                bridge_serial_num_hex: self.bridge_serial_number.clone(),
+                amount: self.asset_amount,
                 account_id: self.faucet_id.clone(),
             };
 
             let response = reqwest::Client::new()
-                .post(format!("{}/mix", client.mixer_url().as_str()))
+                .post(format!("{}/api/v1/mix", client.mixer_url().as_str()))
                 .json(&request)
                 .send()
                 .await.map_err(|e| CliError::Internal(Box::new(e)))?

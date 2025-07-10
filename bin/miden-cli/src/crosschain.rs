@@ -1,24 +1,13 @@
-use std::fmt;
 use thiserror::Error;
-use alloy_primitives::{hex, Address};
 use alloy_primitives::hex::FromHex;
 use miden_bridge::notes::bridge::croschain;
-use miden_bridge::utils::evm_address_to_felts;
-use miden_objects::{AccountIdError, AssetError, Felt, FieldElement, NoteError, StarkField, Word};
+use miden_bridge::utils::{evm_address_to_felts, AddressFormatError};
+use miden_objects::{AccountIdError, AssetError, Felt, FieldElement, NoteError, Word};
 use miden_objects::account::AccountId;
 use miden_objects::asset::FungibleAsset;
 use miden_objects::note::{NoteAssets, NoteDetails, NoteFile, NoteId, NoteInputs, NoteRecipient, NoteTag};
-use miden_objects::utils::{parse_hex_string_as_word, DeserializationError};
+use miden_objects::utils::{parse_hex_string_as_word};
 
-#[derive(Error, Debug)]
-pub enum AddressFormatError {
-    #[error(transparent)]
-    MalformedEvmAddress(#[from] hex::FromHexError),
-    #[error(transparent)]
-    FeltDeserializationError(#[from] DeserializationError),
-    #[error(transparent)]
-    FmtError(#[from] fmt::Error),
-}
 
 pub fn build_crosschain_recipient(
     serial_number: Word,

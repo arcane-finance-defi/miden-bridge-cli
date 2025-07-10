@@ -284,7 +284,7 @@ impl TransactionRequest {
     /// Miden host.
     pub(crate) fn into_transaction_args(
         self,
-        tx_script: Option<TransactionScript>,
+        tx_script: TransactionScript,
         foreign_account_inputs: Vec<AccountInputs>,
     ) -> TransactionArgs {
         let note_args = self.get_note_args();
