@@ -23,10 +23,6 @@ impl NoteScript {
     pub fn root_hex(&self) -> String {
         self.0.root().to_hex()
     }
-
-    pub fn crosschain() -> Self {
-        croschain_script().into()
-    }
 }
 // CONVERSIONS
 // ================================================================================================

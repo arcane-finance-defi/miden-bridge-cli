@@ -29,7 +29,6 @@ miden-client = { default-features = false, features = [
 ], path = "../rust-client", version = "0.10" }
 
 # Miden dependencies
-miden-bridge = { git = "https://github.com/arcane-finance-defi/miden-bridge-mono", branch = "feat/mixer", version = "0.1.0", default-features = false }
 miden-lib     = { workspace = true }
 miden-objects = { workspace = true }
 
