@@ -53,7 +53,7 @@ getrandom             = { features = ["wasm_js"], optional = true, version = "0.
 hex                   = { version = "0.4" }
 prost                 = { default-features = false, features = ["derive"], version = "0.13" }
 rand                  = { workspace = true }
-rusqlite              = { features = ["array", "bundled", "vtab"], optional = true, version = "0.36" }
+rusqlite              = { features = ["array", "bundled", "vtab"], optional = true, version = "0.37" }
 rusqlite_migration    = { optional = true, version = "2.1" }
 serde                 = { optional = true, workspace = true }
 serde-wasm-bindgen    = { optional = true, version = "0.6" }
