@@ -3,22 +3,16 @@ use alloc::{
     vec::Vec,
 };
 
-use miden_objects::{Word, account::Account, asset::Asset};
+use miden_objects::{Word, account::Account};
 use miden_tx::utils::Serializable;
-use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::{js_sys, wasm_bindgen};
-
-use crate::{
-    store::web_store::{
-        account::utils::insert_account_storage,
-        note::utils::{SerializedInputNoteData, SerializedOutputNoteData},
-        transaction::utils::SerializedTransactionData,
-    },
-    sync::StateSyncUpdate,
-};
+use wasm_bindgen_futures::js_sys;
 
 use super::flattened_vec::FlattenedU8Vec;
+use crate::store::web_store::{
+    note::utils::{SerializedInputNoteData, SerializedOutputNoteData},
+    transaction::utils::SerializedTransactionData,
+};
 
 // Sync IndexedDB Operations
 #[wasm_bindgen(module = "/src/store/web_store/js/sync.js")]
@@ -107,7 +101,7 @@ pub struct JsAccountUpdate {
     #[wasm_bindgen(js_name = "codeRoot")]
     pub code_root: String,
     #[wasm_bindgen(js_name = "committed")]
-    pub commited: bool,
+    pub committed: bool,
     #[wasm_bindgen(js_name = "nonce")]
     pub nonce: String,
     #[wasm_bindgen(js_name = "accountCommitment")]
@@ -126,7 +120,7 @@ impl JsAccountUpdate {
             asset_bytes: asset_vault.assets().collect::<Vec<_>>().to_bytes(),
             account_id: account.id().to_string(),
             code_root: account.code().commitment().to_string(),
-            commited: account.is_public(),
+            committed: account.is_public(),
             nonce: account.nonce().to_string(),
             account_commitment: account.commitment().to_string(),
             account_seed: account_seed.map(|seed| seed.to_bytes()),

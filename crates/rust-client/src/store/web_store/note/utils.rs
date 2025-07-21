@@ -25,7 +25,6 @@ use crate::{
 // TYPES
 // ================================================================================================
 
-// FIXME: See if we can avoid poluting the struct
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Clone, Debug)]
 pub struct SerializedInputNoteData {
@@ -48,7 +47,6 @@ pub struct SerializedInputNoteData {
     pub created_at: String,
 }
 
-// FIXME: See if we can avoid poluting the struct
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Clone, Debug)]
 pub struct SerializedOutputNoteData {

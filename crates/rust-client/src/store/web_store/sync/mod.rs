@@ -14,10 +14,9 @@ use wasm_bindgen_futures::JsFuture;
 
 use super::{
     WebStore,
-    account::utils::update_account,
     chain_data::utils::{SerializedPartialBlockchainNodeData, serialize_partial_blockchain_node},
-    note::utils::{apply_note_updates_tx, serialize_input_note, serialize_output_note},
-    transaction::utils::{serialize_transaction_record, upsert_transaction_record},
+    note::utils::{serialize_input_note, serialize_output_note},
+    transaction::utils::serialize_transaction_record,
 };
 use crate::{
     store::StoreError,
@@ -27,7 +26,7 @@ use crate::{
 mod js_bindings;
 use js_bindings::{
     JsAccountUpdate, JsStateSyncUpdate, idxdb_add_note_tag, idxdb_apply_state_sync,
-    idxdb_get_note_tags, idxdb_get_sync_height, idxdb_receive_state_sync, idxdb_remove_note_tag,
+    idxdb_get_note_tags, idxdb_get_sync_height, idxdb_remove_note_tag,
 };
 
 mod models;
@@ -217,7 +216,7 @@ impl WebStore {
             serialized_output_notes,
             account_updates: account_updates
                 .updated_public_accounts()
-                .into_iter()
+                .iter()
                 .map(|account| JsAccountUpdate::from_account(account, None))
                 .collect(),
             transaction_updates,
