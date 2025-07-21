@@ -22,7 +22,6 @@ use crate::{
 // ================================================================================================
 
 #[derive(Debug, Clone)]
-// FIXME: See if we can avoid polluting this struct
 #[wasm_bindgen(getter_with_clone)]
 pub struct SerializedTransactionData {
     pub id: String,

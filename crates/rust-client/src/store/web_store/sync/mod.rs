@@ -153,9 +153,6 @@ impl WebStore {
             serialized_nodes.push(node);
         }
 
-        // TODO: LOP INTO idxdb_apply_state_sync call
-        // Update notes
-        // apply_note_updates_tx(&note_updates).await?;
         let (serialized_input_notes, serialized_output_notes): (Vec<_>, Vec<_>) = {
             let input_notes = note_updates.updated_input_notes();
             let output_notes = note_updates.updated_output_notes();
