@@ -27,10 +27,15 @@ use crate::{
 pub struct SerializedTransactionData {
     pub id: String,
     pub details: Vec<u8>,
+    #[wasm_bindgen(js_name = "scriptRoot")]
     pub script_root: Option<Vec<u8>>,
+    #[wasm_bindgen(js_name = "txScript")]
     pub tx_script: Option<Vec<u8>>,
+    #[wasm_bindgen(js_name = "blockNum")]
     pub block_num: String,
+    #[wasm_bindgen(js_name = "commitHeight")]
     pub commit_height: Option<String>,
+    #[wasm_bindgen(js_name = "discardCause")]
     pub discard_cause: Option<Vec<u8>>,
 }
 

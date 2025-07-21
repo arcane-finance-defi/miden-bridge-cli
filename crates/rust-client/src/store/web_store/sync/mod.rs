@@ -182,11 +182,6 @@ impl WebStore {
             })
             .collect();
 
-        // TODO: LOP INTO idxdb_apply_state_sync call
-        // Update public accounts on the db that have been updated onchain
-
-        // FIXME: See how to handle this properly, but
-        // I think it's okay to handle it here.
         for (account_id, digest) in account_updates.mismatched_private_accounts() {
             self.lock_account_on_unexpected_commitment(account_id, digest).await.map_err(
                 |err| {
@@ -195,7 +190,6 @@ impl WebStore {
             )?;
         }
 
-        // FIXME: Consider adding this to apply_state_sync
         let account_states_to_rollback = transaction_updates
             .discarded_transactions()
             .map(|tx_record| tx_record.details.final_account_state)
@@ -210,12 +204,6 @@ impl WebStore {
             .map(serialize_transaction_record)
             .collect();
 
-        // FIXME:
-        // 1. Add Note Updates Here
-        // 2. Process transaction updates + transaction updates discarded
-        // 3. Process account_updates.updated_public_accounts
-        // 4. Lock mismatched private accounts
-        // 5. Undo account states
         let state_update = JsStateSyncUpdate {
             block_num: block_num.to_string(),
             flattened_new_block_headers: flatten_nested_u8_vec(block_headers_as_bytes),
@@ -230,7 +218,7 @@ impl WebStore {
             account_updates: account_updates
                 .updated_public_accounts()
                 .into_iter()
-                .map(JsAccountUpdate::from_account)
+                .map(|account| JsAccountUpdate::from_account(account, None))
                 .collect(),
             transaction_updates,
         };

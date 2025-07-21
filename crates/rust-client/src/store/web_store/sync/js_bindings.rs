@@ -3,8 +3,9 @@ use alloc::{
     vec::Vec,
 };
 
-use miden_objects::{account::Account, asset::Asset};
+use miden_objects::{Word, account::Account, asset::Asset};
 use miden_tx::utils::Serializable;
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::{js_sys, wasm_bindgen};
 
@@ -62,41 +63,61 @@ extern "C" {
 }
 
 #[wasm_bindgen(getter_with_clone)]
-// FIXME: Add docstrings for fields
+#[derive(Clone)]
 pub struct JsStateSyncUpdate {
+    #[wasm_bindgen(js_name = "blockNum")]
     pub block_num: String,
+    #[wasm_bindgen(js_name = "flattenedNewBlockHeaders")]
     pub flattened_new_block_headers: FlattenedU8Vec,
+    #[wasm_bindgen(js_name = "newBlockNums")]
     pub new_block_nums: Vec<String>,
+    #[wasm_bindgen(js_name = "flattenedPartialBlockChainPeaks")]
     pub flattened_partial_blockchain_peaks: FlattenedU8Vec,
+    #[wasm_bindgen(js_name = "blockHasRelevantNotes")]
     pub block_has_relevant_notes: Vec<u8>,
+    #[wasm_bindgen(js_name = "serializedNodeIds")]
     pub serialized_node_ids: Vec<String>,
+    #[wasm_bindgen(js_name = "serializedNodes")]
     pub serialized_nodes: Vec<String>,
+    #[wasm_bindgen(js_name = "noteTagsToRemove")]
     pub note_tags_to_remove: Vec<String>,
+    #[wasm_bindgen(js_name = "serializedInputNotes")]
     pub serialized_input_notes: Vec<SerializedInputNoteData>,
+    #[wasm_bindgen(js_name = "serializedOutputNotes")]
     pub serialized_output_notes: Vec<SerializedOutputNoteData>,
+    #[wasm_bindgen(js_name = "accountUpdates")]
     pub account_updates: Vec<JsAccountUpdate>,
+    #[wasm_bindgen(js_name = "transactionUpdates")]
     pub transaction_updates: Vec<SerializedTransactionData>,
 }
 
-#[wasm_bindgen(getter_with_clone)]
+#[wasm_bindgen(getter_with_clone, inspectable)]
 #[derive(Clone)]
 pub struct JsAccountUpdate {
-    // An account storage's new root, aka commitment.
-    storage_root: String,
-    storage_slots: Vec<u8>,
-    // The asset's vault new root, aka commitment.
-    asset_vault_root: String,
-    // This account's assets, as bytes
-    asset_bytes: Vec<u8>,
-    account_id: String,
-    code_root: String,
-    commited: bool,
-    nonce: String,
-    account_commitment: String,
+    #[wasm_bindgen(js_name = "storageRoot")]
+    pub storage_root: String,
+    #[wasm_bindgen(js_name = "storageSlots")]
+    pub storage_slots: Vec<u8>,
+    #[wasm_bindgen(js_name = "assetVaultRoot")]
+    pub asset_vault_root: String,
+    #[wasm_bindgen(js_name = "assetBytes")]
+    pub asset_bytes: Vec<u8>,
+    #[wasm_bindgen(js_name = "accountId")]
+    pub account_id: String,
+    #[wasm_bindgen(js_name = "codeRoot")]
+    pub code_root: String,
+    #[wasm_bindgen(js_name = "committed")]
+    pub commited: bool,
+    #[wasm_bindgen(js_name = "nonce")]
+    pub nonce: String,
+    #[wasm_bindgen(js_name = "accountCommitment")]
+    pub account_commitment: String,
+    #[wasm_bindgen(js_name = "accountSeed")]
+    pub account_seed: Option<Vec<u8>>,
 }
 
 impl JsAccountUpdate {
-    pub fn from_account(account: &Account) -> Self {
+    pub fn from_account(account: &Account, account_seed: Option<Word>) -> Self {
         let asset_vault = account.vault();
         Self {
             storage_root: account.storage().commitment().to_string(),
@@ -108,6 +129,7 @@ impl JsAccountUpdate {
             commited: account.is_public(),
             nonce: account.nonce().to_string(),
             account_commitment: account.commitment().to_string(),
+            account_seed: account_seed.map(|seed| seed.to_bytes()),
         }
     }
 }

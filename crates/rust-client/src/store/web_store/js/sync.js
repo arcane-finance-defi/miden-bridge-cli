@@ -9,7 +9,12 @@ import {
   tags,
 } from "./schema.js";
 
-import { upsertTransactionRecord } from "./transactions.js";
+import {
+  upsertTransactionRecord,
+  insertTransactionScript,
+} from "./transactions.js";
+
+import { upsertInputNote, upsertOutputNote } from "./notes.js";
 
 import {
   insertAccountStorage,
@@ -92,6 +97,7 @@ export async function applyStateSync(stateUpdate) {
   const {
     blockNum,
     flattenedNewBlockHeaders,
+    flattenedPartialBlockChainPeaks,
     newBlockNums,
     blockHasRelevantNotes,
     serializedNodeIds,
@@ -104,29 +110,29 @@ export async function applyStateSync(stateUpdate) {
   } = stateUpdate;
   const newBlockHeaders = reconstructFlattenedVec(flattenedNewBlockHeaders);
   const partialBlockchainPeaks = reconstructFlattenedVec(
-    flattenedPartialBlockchainPeaks
+    flattenedPartialBlockChainPeaks
   );
-  let inputNotesUpsertOp = serializedInputNotes.map((note) => {
-    upsertInputNote(
+  serializedInputNotes.map((note) => {
+    return upsertInputNote(
       note.noteId,
-      note.assets,
+      note.noteAssets,
       note.serialNumber,
       note.inputs,
       note.noteScriptRoot,
-      note.serializedNoteScript,
+      note.noteScript,
       note.nullifier,
-      note.serializedCreatedAt,
+      note.createdAt,
       note.stateDiscriminant,
       note.state
     );
   });
 
-  let outputNotesUpsertOp = serializedOutputNotes.map((note) => {
-    outputNotesUpsertOp(
+  serializedOutputNotes.map((note) => {
+    return upsertOutputNote(
       note.noteId,
-      note.assets,
+      note.noteAssets,
       note.recipientDigest,
-      note.metaData,
+      note.metadata,
       note.nullifier,
       note.expectedHeight,
       note.stateDiscriminant,
@@ -134,25 +140,30 @@ export async function applyStateSync(stateUpdate) {
     );
   });
 
-  let transactionWriteOp = transactionUpdates.map((transactionRecord) => {
-    Promise.all([
+  let inputNotesWriteOp = Promise.all(serializedInputNotes);
+  let outputNotesWriteOp = Promise.all(serializedOutputNotes);
+
+  transactionUpdates.flatMap((transactionRecord) => {
+    [
       insertTransactionScript(
         transactionRecord.scriptRoot,
         transactionRecord.txScript
       ),
       upsertTransactionRecord(
-        transactionRecord.Id,
+        transactionRecord.id,
         transactionRecord.details,
         transactionRecord.scriptRoot,
         transactionRecord.blockNum,
         transactionRecord.commitHeight,
         transactionRecord.discardCause
       ),
-    ]);
+    ];
   });
 
-  let accountUpdatesWriteOp = accountUpdates.map((accountUpdate) => {
-    Promise.all([
+  let transactionWriteOp = Promise.all(transactionUpdates);
+
+  accountUpdates.flatMap((accountUpdate) => {
+    return [
       insertAccountStorage(
         accountUpdate.storageRoot,
         accountUpdate.storageSlots
@@ -163,15 +174,18 @@ export async function applyStateSync(stateUpdate) {
       ),
       insertAccountRecord(
         accountUpdate.accountId,
-        account.codeRoot,
-        account.assetVaultRoot,
-        account.nonce,
-        account.commited,
-        account.accountSeed,
-        account.account_commitment
+        accountUpdate.codeRoot,
+        accountUpdate.storageRoot,
+        accountUpdate.assetVaultRoot,
+        accountUpdate.nonce,
+        accountUpdate.committed,
+        accountUpdate.accountSeed,
+        accountUpdate.accountCommitment
       ),
-    ]);
+    ];
   });
+
+  let accountUpdatesWriteOp = Promise.all(accountUpdates);
 
   return await db.transaction(
     "rw",
@@ -183,10 +197,12 @@ export async function applyStateSync(stateUpdate) {
     partialBlockchainNodes,
     tags,
     async (tx) => {
-      await inputNotesUpsertOp;
-      await outputNotesUpsertOp;
-      await transactionWriteOp;
-      await accountUpdatesWriteOp;
+      await Promise.all([
+        inputNotesWriteOp,
+        outputNotesWriteOp,
+        transactionWriteOp,
+        accountUpdatesWriteOp,
+      ]);
       await updateSyncHeight(tx, blockNum);
       for (let i = 0; i < newBlockHeaders.length; i++) {
         await updateBlockHeader(
@@ -265,7 +281,6 @@ async function updatePartialBlockchainNodes(tx, nodeIndexes, nodes) {
       id: nodeIndexes[index],
       node: node,
     }));
-
     // Use bulkPut to add/overwrite the entries
     await tx.partialBlockchainNodes.bulkPut(data);
   } catch (err) {
@@ -281,12 +296,10 @@ async function updateCommittedNoteTags(tx, inputNoteIds) {
   try {
     for (let i = 0; i < inputNoteIds.length; i++) {
       const noteId = inputNoteIds[i];
-
       // Remove note tags
       await tx.tags.where("source_note_id").equals(noteId).delete();
     }
   } catch (error) {
-    console.error("Error updating committed notes:", error.toString());
     throw error;
   }
 }
