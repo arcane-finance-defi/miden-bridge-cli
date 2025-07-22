@@ -7,7 +7,7 @@ import {
   foreignAccountCode,
 } from "./schema";
 
-import { AccountRecord } from "../../../../../web-client/pkg/miden_client_web.js";
+import { AccountRecord } from "./types";
 
 // GET FUNCTIONS
 export async function getAccountIds() {

@@ -150,15 +150,22 @@ build: ## Build the CLI binary and client library in release mode
 	CODEGEN=1 cargo build --workspace --exclude miden-client-web --exclude testing-remote-prover --release
 	cargo build --package testing-remote-prover --release
 
-type-gen:
-	cd ./crates/web-client && \
-	wasm-pack build --dev --out-dir $(PROJECT_ROOT)/crates/rust-client/src/store/web_store/ts/types
-
-build-wasm: ## Build the client library for wasm32
+build-wasm: rust-client-ts-build ## Build the client library for wasm32
 	CODEGEN=1 cargo build --package miden-client-web --target wasm32-unknown-unknown $(FEATURES_WEB_CLIENT)
-	cd ./crates/rust-client/src/store/web_store/ && tsc --noEmit
+
+
+.PHONY: rust-client-type-gen
+rust-client-type-gen:
+	tsync -i ./crates/rust-client/src/store/web_store/account/js_bindings.rs -o ./crates/rust-client/src/store/web_store/ts/types.ts
+
+rust-client-ts-build: rust-client-type-gen
+	cd ./crates/rust-client/src/store/web_store && tsc
 
 # --- Check ---------------------------------------------------------------------------------------
+
+.PHONY: rust-client-ts-check
+rust-client-ts-check: rust-client-type-gen
+	cd ./crates/rust-client/src/store/web_store && tsc --noEmit
 
 .PHONY: check
 check: ## Build the CLI binary and client library in release mode

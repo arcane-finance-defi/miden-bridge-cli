@@ -1,13 +1,14 @@
 use alloc::{boxed::Box, string::String, string::ToString, vec::Vec};
 
 use serde::{Deserialize, Serialize};
-use tsify::Tsify;
+use tsync::tsync;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::{js_sys, wasm_bindgen};
 
-#[derive(Tsify, Serialize, Deserialize)]
-#[tsify(into_wasm_abi, from_wasm_abi)]
+#[tsync]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[wasm_bindgen(getter_with_clone)]
 pub struct AccountRecord {
     pub id: String,
     pub code_root: String,
@@ -20,7 +21,7 @@ pub struct AccountRecord {
 }
 
 // Account IndexedDB Operations
-#[wasm_bindgen(module = "/src/store/web_store/ts/accounts.ts")]
+#[wasm_bindgen(module = "/src/store/web_store/js/accounts.js")]
 extern "C" {
     // GETS
     // ================================================================================================

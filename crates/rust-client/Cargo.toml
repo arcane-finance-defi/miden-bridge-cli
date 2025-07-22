@@ -72,6 +72,8 @@ uuid                  = { features = ["js", "serde", "v4"], optional = true, ver
 wasm-bindgen          = { features = ["serde-serialize"], optional = true, version = "0.2" }
 wasm-bindgen-futures  = { optional = true, version = "0.4" }
 tsify = "0.5.5"
+ts-rs = "11.0.1"
+tsync = "1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-sys = { features = ["Storage", "Window", "console"], version = "0.3" }
