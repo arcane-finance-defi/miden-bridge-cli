@@ -17,6 +17,7 @@ WARNINGS=RUSTDOCFLAGS="-D warnings"
 
 PROVER_DIR="crates/testing/prover"
 WEB_CLIENT_DIR=crates/web-client
+PROJECT_ROOT=$(shell pwd)
 
 # --- Linting -------------------------------------------------------------------------------------
 
@@ -149,8 +150,13 @@ build: ## Build the CLI binary and client library in release mode
 	CODEGEN=1 cargo build --workspace --exclude miden-client-web --exclude testing-remote-prover --release
 	cargo build --package testing-remote-prover --release
 
+type-gen:
+	cd ./crates/web-client && \
+	wasm-pack build --dev --out-dir $(PROJECT_ROOT)/crates/rust-client/src/store/web_store/ts/types
+
 build-wasm: ## Build the client library for wasm32
 	CODEGEN=1 cargo build --package miden-client-web --target wasm32-unknown-unknown $(FEATURES_WEB_CLIENT)
+	cd ./crates/rust-client/src/store/web_store/ && tsc --noEmit
 
 # --- Check ---------------------------------------------------------------------------------------
 

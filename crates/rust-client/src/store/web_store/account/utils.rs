@@ -16,7 +16,7 @@ use wasm_bindgen_futures::JsFuture;
 
 use super::{
     js_bindings::{
-        idxdb_get_account_auth_by_pub_key, idxdb_insert_account_asset_vault,
+        AccountRecord, idxdb_get_account_auth_by_pub_key, idxdb_insert_account_asset_vault,
         idxdb_insert_account_auth, idxdb_insert_account_code, idxdb_insert_account_record,
         idxdb_insert_account_storage,
     },
@@ -86,16 +86,16 @@ pub async fn insert_account_record(
     let account_seed = account_seed.map(|seed| seed.to_bytes());
     let commitment = account.commitment().to_string();
 
-    let promise = idxdb_insert_account_record(
-        account_id_str,
+    let promise = idxdb_insert_account_record(AccountRecord {
+        id: account_id_str,
         code_root,
         storage_root,
         vault_root,
-        nonce,
         committed,
         account_seed,
         commitment,
-    );
+        nonce,
+    });
     JsFuture::from(promise).await?;
 
     Ok(())
