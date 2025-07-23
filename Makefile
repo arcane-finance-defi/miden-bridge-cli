@@ -17,7 +17,7 @@ WARNINGS=RUSTDOCFLAGS="-D warnings"
 
 PROVER_DIR="crates/testing/prover"
 WEB_CLIENT_DIR=crates/web-client
-PROJECT_ROOT=$(shell pwd)
+RUST_CLIENT_DIR=crates/rust-client
 
 # --- Linting -------------------------------------------------------------------------------------
 
@@ -153,13 +153,12 @@ build: ## Build the CLI binary and client library in release mode
 build-wasm: rust-client-ts-build ## Build the client library for wasm32
 	CODEGEN=1 cargo build --package miden-client-web --target wasm32-unknown-unknown $(FEATURES_WEB_CLIENT)
 
-
 .PHONY: rust-client-type-gen
 rust-client-type-gen:
-	tsync -i ./crates/rust-client/src/store/web_store/account/js_bindings.rs -o ./crates/rust-client/src/store/web_store/ts/types.ts
+	tsync -i ./crates/rust-client/src/store/web_store -o ./crates/rust-client/src/store/web_store/ts/types.ts
 
 rust-client-ts-build: rust-client-type-gen
-	cd ./crates/rust-client/src/store/web_store && tsc
+	cd ./crates/rust-client/src/store/web_store && yarn tsc
 
 # --- Check ---------------------------------------------------------------------------------------
 
@@ -194,8 +193,11 @@ install-tools: ## Installs Rust + Node tools required by the Makefile
 	cargo install typos-cli --locked
 	cargo install cargo-nextest --locked
 	cargo install taplo-cli --locked
+	cargo install tsync --locked
 	# Web-related
 	command -v yarn >/dev/null 2>&1 || npm install -g yarn
 	yarn --cwd $(WEB_CLIENT_DIR) --silent  # installs prettier, eslint, typedoc, etc.
+	yarn --cwd $(RUST_CLIENT_DIR)/src/store/web_store --silent
 	yarn --silent
+	yarn
 	@echo "Development tools installation complete!"

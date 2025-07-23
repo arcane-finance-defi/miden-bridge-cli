@@ -1,4 +1,8 @@
-use alloc::{boxed::Box, string::String, string::ToString, vec::Vec};
+use alloc::{
+    boxed::Box,
+    string::{String, ToString},
+    vec::Vec,
+};
 
 use serde::{Deserialize, Serialize};
 use tsync::tsync;
