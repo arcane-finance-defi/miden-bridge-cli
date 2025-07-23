@@ -5,6 +5,8 @@ use comfy_table::{presets, Attribute, Cell, ContentArrangement, Table};
 use errors::CliError;
 use miden_client::{account::AccountHeader, crypto::RpoRandomCoin, keystore::FilesystemKeyStore, rpc::TonicRpcClient, store::{sqlite_store::SqliteStore, NoteFilter as ClientNoteFilter, OutputNoteRecord, Store}, Client, ClientError, Felt, builder::ClientBuilder, IdPrefixFetchError};
 use rand::{Rng, rngs::StdRng};
+use tracing::Level;
+
 mod commands;
 use commands::{
     account::AccountCmd,
@@ -108,6 +110,16 @@ impl Cli {
             return Ok(());
         }
 
+        let log_level = if self.debug { Level::TRACE } else { Level::INFO };
+
+        let subscriber = tracing_subscriber::FmtSubscriber::builder()
+            .with_max_level(log_level)
+            .finish();
+
+
+        tracing::subscriber::set_global_default(subscriber)
+            .expect("setting default subscriber failed");
+
         // Define whether we want to use the executor's debug mode based on the env var and
         // the flag override
         let in_debug_mode = match env::var("MIDEN_DEBUG") {
@@ -161,7 +173,7 @@ impl Cli {
             Command::Recipient(recipient) => recipient.execute(client).await,
             Command::Reconstruct(reconstruct) => reconstruct.execute(&mut client).await,
             Command::Crosschain(crosschain) => crosschain.execute(client).await,
-            Command::Mix(mix) => mix.execute(&mut client).await,
+            Command::Mix(mix) => mix.execute(&mut client, cli_config.mixer_url).await,
         }
     }
 }

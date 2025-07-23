@@ -1,5 +1,6 @@
 use thiserror::Error;
 use alloy_primitives::hex::FromHex;
+use miden_bridge::accounts::token_wrapper::bridge_note_tag;
 use miden_bridge::notes::bridge::croschain;
 use miden_bridge::utils::{evm_address_to_felts, AddressFormatError};
 use miden_objects::{AccountIdError, AssetError, Felt, FieldElement, NoteError, Word};
@@ -85,13 +86,11 @@ pub async fn reconstruct_crosschain_note(
 
     let note_id = note_details.id();
 
-    const BRIDGE_USECASE: u16 = 15593;
-
     Ok((
         NoteFile::NoteDetails {
             details: note_details,
             after_block_num: 0.into(),
-            tag: Some(NoteTag::for_local_use_case(BRIDGE_USECASE, 0)?)
+            tag: Some(bridge_note_tag())
         },
         note_id
     ))

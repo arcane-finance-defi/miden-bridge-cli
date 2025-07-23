@@ -3,6 +3,7 @@ use miden_lib::note::utils::build_p2id_recipient;
 use miden_objects::asset::FungibleAsset;
 use miden_objects::note::{NoteAssets, NoteDetails, NoteFile};
 use miden_objects::utils::parse_hex_string_as_word;
+use tracing::{info, warn};
 use miden_client::Client;
 use crate::crosschain::reconstruct_crosschain_note;
 use crate::errors::CliError;
@@ -127,6 +128,10 @@ impl ReconstructCmd {
 
             client.import_note(note_text).await
                 .map_err(|e| CliError::Internal(Box::new(e)))?;
+
+            info!("Note {} successfully imported", note_id.to_hex());
+        } else {
+            warn!("Note {} was not found", note_id.to_hex());
         }
 
         Ok(())
