@@ -159,13 +159,13 @@ rust-client-type-gen:
 
 .PHONY: rust-client-ts-build
 rust-client-ts-build: rust-client-type-gen
-	cd $(RUST_CLIENT_DIR)/src/store/web_store && yarn tsc --build --force
+	cd $(RUST_CLIENT_DIR)/src/store/web_store && yarn && yarn tsc --build --force
 
 # --- Check ---------------------------------------------------------------------------------------
 
 .PHONY: rust-client-ts-check
 rust-client-ts-check: rust-client-type-gen
-	cd ./crates/rust-client/src/store/web_store && yarn tsc --noEmit
+	cd ./crates/rust-client/src/store/web_store && yarn && yarn tsc --noEmit
 
 .PHONY: check
 check: ## Build the CLI binary and client library in release mode
