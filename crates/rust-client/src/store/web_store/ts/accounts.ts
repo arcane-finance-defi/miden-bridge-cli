@@ -5,9 +5,9 @@ import {
   accountAuths,
   accounts,
   foreignAccountCode,
-} from "./schema";
+} from "./schema.js";
 
-import { AccountRecord } from "./types";
+import { AccountRecord } from "./types.js";
 
 // GET FUNCTIONS
 export async function getAccountIds() {

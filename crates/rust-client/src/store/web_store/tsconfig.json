@@ -8,7 +8,8 @@
     "removeComments": false,
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": false,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./js",
     "strict": true,
@@ -19,7 +20,9 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
+    "exactOptionalPropertyTypes": true,
+    "declaration": true
   },
-  "include": ["./ts/*.ts", "./ts/*.d.ts"]
+  "include": ["./ts/*.ts", "./ts/*.d.ts"],
+  "exclude": ["./js"]
 }

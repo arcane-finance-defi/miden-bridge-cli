@@ -21,6 +21,7 @@
 - [AccountDelta](classes/AccountDelta.md)
 - [AccountHeader](classes/AccountHeader.md)
 - [AccountId](classes/AccountId.md)
+- [AccountRecord](classes/AccountRecord.md)
 - [AccountStorage](classes/AccountStorage.md)
 - [AccountStorageMode](classes/AccountStorageMode.md)
 - [AccountStorageRequirements](classes/AccountStorageRequirements.md)
