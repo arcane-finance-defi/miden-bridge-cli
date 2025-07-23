@@ -51,9 +51,6 @@ extern "C" {
 
     #[wasm_bindgen(js_name = discardTransactions)]
     pub fn idxdb_discard_transactions(transactions: Vec<String>) -> js_sys::Promise;
-
-    #[wasm_bindgen(js_name = receiveStateSync)]
-    pub fn idxdb_receive_state_sync(state_update: JsStateSyncUpdate) -> js_sys::Promise;
 }
 
 #[wasm_bindgen(getter_with_clone)]
