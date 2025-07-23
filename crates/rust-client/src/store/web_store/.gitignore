@@ -1,3 +1,6 @@
+# Ignore generated build files, eventually we should
+# add the whole js folder here.
 ./js/account.js*
 ./js/types.*
 ./js/sync.js*
+./js/tsconfig.tsbuildinfo
