@@ -157,8 +157,9 @@ build-wasm: rust-client-ts-build ## Build the client library for wasm32
 rust-client-type-gen:
 	tsync -i ./crates/rust-client/src/store/web_store -o ./crates/rust-client/src/store/web_store/ts/types.ts
 
+.PHONY: rust-client-ts-build
 rust-client-ts-build: rust-client-type-gen
-	cd $(RUST_CLIENT_DIR)/src/store/web_store && yarn tsc
+	cd $(RUST_CLIENT_DIR)/src/store/web_store && yarn tsc --build --force
 
 # --- Check ---------------------------------------------------------------------------------------
 
