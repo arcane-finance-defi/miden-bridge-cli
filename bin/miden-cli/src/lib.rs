@@ -12,6 +12,8 @@ use miden_client::keystore::FilesystemKeyStore;
 use miden_client::store::{NoteFilter as ClientNoteFilter, OutputNoteRecord};
 use miden_client::{Client, DebugMode, IdPrefixFetchError};
 use rand::{Rng, rngs::StdRng};
+use tracing::Level;
+
 mod commands;
 use commands::account::AccountCmd;
 use commands::exec::ExecCmd;
@@ -172,6 +174,16 @@ impl Cli {
             return Ok(());
         }
 
+        let log_level = if self.debug { Level::TRACE } else { Level::INFO };
+
+        let subscriber = tracing_subscriber::FmtSubscriber::builder()
+            .with_max_level(log_level)
+            .finish();
+
+
+        tracing::subscriber::set_global_default(subscriber)
+            .expect("setting default subscriber failed");
+
         // Define whether we want to use the executor's debug mode based on the env var and
         // the flag override
         let in_debug_mode = match env::var("MIDEN_DEBUG") {
@@ -227,7 +239,7 @@ impl Cli {
             Command::Recipient(recipient) => recipient.execute(client).await,
             Command::Reconstruct(reconstruct) => reconstruct.execute(&mut client).await,
             Command::Crosschain(crosschain) => crosschain.execute(client).await,
-            Command::Mix(mix) => mix.execute(&mut client).await,
+            Command::Mix(mix) => mix.execute(&mut client, cli_config.mixer_url).await,
         }
     }
 
