@@ -75,7 +75,7 @@ book: ## Builds the book & serves documentation site
 	mdbook serve --open docs
 
 .PHONY: typedoc
-typedoc: ## Generate web client package documentation.
+typedoc: rust-client-ts-build ## Generate web client package documentation.
 	@cd crates/web-client && \
 	npm run build-dev && \
 	yarn typedoc

@@ -2,7 +2,6 @@ use alloc::{string::String, vec::Vec};
 
 use base64::{Engine as _, engine::general_purpose};
 use serde::{Deserialize, Deserializer, Serialize, de::Error};
-use wasm_bindgen::prelude::wasm_bindgen;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -36,7 +35,6 @@ pub struct AccountVaultIdxdbObject {
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-#[wasm_bindgen(getter_with_clone)]
 pub struct AccountRecordIdxdbObject {
     pub id: String,
     pub nonce: String,
