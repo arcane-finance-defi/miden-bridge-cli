@@ -30,11 +30,5 @@ jobs:
         run: rustup target add wasm32-unknown-unknown
       - name: Add Rust Cache
         uses: Swatinem/rust-cache@v2
-      - name: Add cargo binstall
-        uses: cargo-bins/cargo-binstall@main
-      - name: Add yarn
-        uses: actions/setup-node@v4
-      - name: Install tsync
-        run: cargo binstall tsync
       - name: make - build-wasm
         run: make build-wasm
