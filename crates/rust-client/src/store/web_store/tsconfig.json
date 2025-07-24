@@ -9,7 +9,6 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "allowImportingTsExtensions": false,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./js",
     "strict": true,
@@ -18,7 +17,6 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "declaration": true
