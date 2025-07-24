@@ -27,7 +27,7 @@ clippy: ## Run Clippy with configs. We need two separate commands because the `t
 	cargo clippy --package testing-remote-prover --all-targets -- -D warnings
 
 .PHONY: clippy-wasm
-clippy-wasm: ## Run Clippy for the miden-client-web package
+clippy-wasm: rust-client-ts-build ## Run Clippy for the miden-client-web package
 	cargo clippy --package miden-client-web --target wasm32-unknown-unknown --all-targets $(FEATURES_WEB_CLIENT) -- -D warnings
 
 .PHONY: fix
