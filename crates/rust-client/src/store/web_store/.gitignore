@@ -4,5 +4,4 @@ js/accounts.*
 js/types.*
 js/sync.*
 js/schema.*
-js/types.*
 tsconfig.tsbuildinfo

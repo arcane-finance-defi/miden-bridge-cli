@@ -545,9 +545,6 @@ export async function insertAccountAuth(pubKey: string, secretKey: string) {
     // Perform the insert using Dexie
     await accountAuths.add(data);
   } catch (error: unknown) {
-    // Add unknown type
-    // Note: The original error message used `accountId` here, which is not available in this scope.
-    // Assuming you meant `pubKey` for context, adapting the message.
     if (error instanceof Error) {
       console.error(
         `Error inserting account auth for pubKey: ${pubKey}:`,

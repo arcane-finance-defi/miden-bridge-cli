@@ -68,7 +68,6 @@ toml                  = { optional = true, version = "0.8" }
 tonic                 = { default-features = false, features = ["codegen", "prost"], version = "0.13" }
 tonic-web-wasm-client = { default-features = false, optional = true, version = "0.7" }
 tracing               = { workspace = true }
-tsync                 = "1"
 uuid                  = { features = ["js", "serde", "v4"], optional = true, version = "1.10" }
 wasm-bindgen          = { features = ["serde-serialize"], optional = true, version = "0.2" }
 wasm-bindgen-futures  = { optional = true, version = "0.4" }

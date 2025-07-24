@@ -11,7 +11,7 @@ use miden_objects::{
 };
 use miden_tx::utils::Serializable;
 use serde_wasm_bindgen::from_value;
-use wasm_bindgen::{JsValue, prelude::wasm_bindgen};
+use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
 
 use super::{

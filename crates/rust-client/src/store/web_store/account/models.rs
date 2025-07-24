@@ -2,7 +2,6 @@ use alloc::{string::String, vec::Vec};
 
 use base64::{Engine as _, engine::general_purpose};
 use serde::{Deserialize, Deserializer, Serialize, de::Error};
-use tsync::tsync;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[derive(Serialize, Deserialize)]

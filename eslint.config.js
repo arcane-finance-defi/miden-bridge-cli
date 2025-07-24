@@ -47,7 +47,7 @@ module.exports = [
       parserOptions: {
         ecmaVersion: 2022,
         sourceType: "module",
-        project: "crates/rust-client/src/store/web_store/tsconfig.json", // path to your tsconfig file
+        project: "crates/rust-client/src/store/web_store/tsconfig.json",
       },
     },
     rules: { camelcase: ["error", { properties: "always" }] },

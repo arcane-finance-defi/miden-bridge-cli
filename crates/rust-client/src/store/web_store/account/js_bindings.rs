@@ -1,11 +1,7 @@
 use alloc::{string::String, vec::Vec};
 
-use serde::{Deserialize, Serialize};
-use tsync::tsync;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::{js_sys, wasm_bindgen};
-
-use super::models::AccountRecordIdxdbObject;
 
 // Account IndexedDB Operations
 #[wasm_bindgen(module = "/src/store/web_store/js/accounts.js")]
