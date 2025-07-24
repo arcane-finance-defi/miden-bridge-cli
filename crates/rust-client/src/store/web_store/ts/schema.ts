@@ -32,7 +32,6 @@ enum Table {
   ForeignAccountCode = "foreignAccountCode",
 }
 
-// Define interfaces for your tables to provide type safety
 export interface IAccountCode {
   root: string;
   code: Blob;
@@ -67,32 +66,42 @@ export interface IAccount {
 
 export interface ITransaction {
   id: string;
-  // Add other transaction properties as needed
+  details: Blob;
+  scriptRoot: string;
+  blockNum: number;
+  commitHeight: number;
+  discardCause: Blob | null;
 }
 
 export interface ITransactionScript {
   scriptRoot: string;
-  // Add other transaction script properties as needed
+  script: Blob;
 }
 
 export interface IInputNote {
   noteId: string;
-  nullifier: string;
   stateDiscriminant: string;
-  // Add other input note properties as needed
+  assets: string;
+  serialNumber: Blob;
+  inputs: Blob;
+  scriptRoot: string;
+  nullifier: string;
+  createdAt: BigInt;
 }
 
 export interface IOutputNote {
   noteId: string;
   recipientDigest: string;
+  assets: Blob;
+  metadata: Blob;
   stateDiscriminant: string;
   nullifier: string;
-  // Add other output note properties as needed
+  expectedHeight: BigInt;
 }
 
 export interface INotesScript {
   scriptRoot: string;
-  // Add other note script properties as needed
+  serializedNoteScript: Blob;
 }
 
 export interface IStateSync {
@@ -103,16 +112,15 @@ export interface IStateSync {
 export interface IBlockHeader {
   blockNum: number;
   hasClientNotes: boolean;
-  // Add other block header properties as needed
 }
 
 export interface IPartialBlockchainNode {
   id: string;
-  // Add other partial blockchain node properties as needed
+  node: string;
 }
 
 export interface ITag {
-  id?: number; // IndexedDB typically auto-increments number keys
+  id?: number;
   tag: string;
   source_note_id?: string;
   source_account_id?: string;
@@ -123,7 +131,6 @@ export interface IForeignAccountCode {
   codeRoot: string;
 }
 
-// Directly create a Dexie instance and declare tables on it
 const db = new Dexie(DATABASE_NAME) as Dexie & {
   accountCodes: Dexie.Table<IAccountCode, string>;
   accountStorages: Dexie.Table<IAccountStorage, string>;

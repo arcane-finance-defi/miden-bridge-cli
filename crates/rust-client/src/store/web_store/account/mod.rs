@@ -11,6 +11,7 @@ use miden_objects::{
 };
 use miden_tx::utils::{Deserializable, Serializable};
 use serde_wasm_bindgen::from_value;
+use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen_futures::JsFuture;
 
 use super::WebStore;
@@ -61,10 +62,8 @@ impl WebStore {
         let js_value = JsFuture::from(promise).await.map_err(|js_error| {
             StoreError::DatabaseError(format!("failed to fetch account headers: {js_error:?}",))
         })?;
-
         let account_headers_idxdb: Vec<AccountRecordIdxdbObject> = from_value(js_value)
             .map_err(|err| StoreError::DatabaseError(format!("failed to deserialize {err:?}")))?;
-
         let account_headers: Vec<(AccountHeader, AccountStatus)> = account_headers_idxdb
             .into_iter()
             .map(parse_account_record_idxdb_object)
@@ -156,7 +155,6 @@ impl WebStore {
         let js_value = JsFuture::from(promise).await.map_err(|js_error| {
             StoreError::DatabaseError(format!("failed to fetch account code: {js_error:?}",))
         })?;
-
         let account_code_idxdb: AccountCodeIdxdbObject = from_value(js_value)
             .map_err(|err| StoreError::DatabaseError(format!("failed to deserialize {err:?}")))?;
 

@@ -5,20 +5,7 @@ use tsync::tsync;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::{js_sys, wasm_bindgen};
 
-#[tsync]
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[wasm_bindgen(getter_with_clone)]
-pub struct AccountRecord {
-    pub id: String,
-    pub code_root: String,
-    pub storage_root: String,
-    pub vault_root: String,
-    pub nonce: String,
-    pub committed: bool,
-    pub account_seed: Option<Vec<u8>>,
-    pub commitment: String,
-}
+use super::models::AccountRecordIdxdbObject;
 
 // Account IndexedDB Operations
 #[wasm_bindgen(module = "/src/store/web_store/js/accounts.js")]
@@ -69,7 +56,16 @@ extern "C" {
     -> js_sys::Promise;
 
     #[wasm_bindgen(js_name = insertAccountRecord)]
-    pub fn idxdb_insert_account_record(record: AccountRecord) -> js_sys::Promise;
+    pub fn idxdb_insert_account_record(
+        id: String,
+        code_root: String,
+        storage_root: String,
+        vault_root: String,
+        nonce: String,
+        committed: bool,
+        commitment: String,
+        account_seed: Option<Vec<u8>>,
+    ) -> js_sys::Promise;
 
     #[wasm_bindgen(js_name = insertAccountAuth)]
     pub fn idxdb_insert_account_auth(pub_key: String, secret_key: String) -> js_sys::Promise;

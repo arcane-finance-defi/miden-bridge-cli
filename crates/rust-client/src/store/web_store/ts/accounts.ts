@@ -7,8 +7,6 @@ import {
   foreignAccountCode,
 } from "./schema.js";
 
-import { AccountRecord } from "./types.js";
-
 // GET FUNCTIONS
 export async function getAccountIds() {
   try {
@@ -65,11 +63,13 @@ export async function getAllAccountHeaders() {
         return {
           id: record.id,
           nonce: record.nonce,
-          vaultRoot: record.vaultRoot,
-          storageRoot: record.storageRoot,
-          codeRoot: record.codeRoot,
-          accountSeed: accountSeedBase64, // Now correctly formatted as Base64
+          vaultRoot: record.vaultRoot, // Fallback if missing
+          storageRoot: record.storageRoot || "",
+          codeRoot: record.codeRoot || "",
+          accountSeed: accountSeedBase64, // null or base64 string
           locked: record.locked,
+          committed: record.committed ?? true, // Use actual value or default
+          accountCommitment: record.accountCommitment || "", // Keep original field name
         };
       })
     );
@@ -490,16 +490,16 @@ export async function insertAccountAssetVault(
   }
 }
 
-export async function insertAccountRecord({
-  id: accountId,
-  codeRoot,
-  storageRoot,
-  vaultRoot,
-  nonce,
-  committed,
-  accountSeed,
-  commitment,
-}: AccountRecord) {
+export async function insertAccountRecord(
+  accountId: string,
+  codeRoot: string,
+  storageRoot: string,
+  vaultRoot: string,
+  nonce: string,
+  committed: boolean,
+  commitment: string,
+  accountSeed?: Uint8Array
+) {
   try {
     let accountSeedBlob = null;
     if (accountSeed) {
@@ -518,7 +518,6 @@ export async function insertAccountRecord({
       accountCommitment: commitment,
       locked: false,
     };
-
     // Perform the insert using Dexie
     await accounts.add(data);
   } catch (error: unknown) {
