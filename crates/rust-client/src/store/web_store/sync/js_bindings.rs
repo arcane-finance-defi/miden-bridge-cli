@@ -70,8 +70,8 @@ pub struct JsStateSyncUpdate {
     pub serialized_node_ids: Vec<String>,
     #[wasm_bindgen(js_name = "serializedNodes")]
     pub serialized_nodes: Vec<String>,
-    #[wasm_bindgen(js_name = "noteTagsToRemove")]
-    pub note_tags_to_remove: Vec<String>,
+    #[wasm_bindgen(js_name = "noteTagsIdsToRemove")]
+    pub note_tags_ids_to_remove: Vec<String>,
     #[wasm_bindgen(js_name = "serializedInputNotes")]
     pub serialized_input_notes: Vec<SerializedInputNoteData>,
     #[wasm_bindgen(js_name = "serializedOutputNotes")]

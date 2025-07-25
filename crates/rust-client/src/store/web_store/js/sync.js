@@ -91,8 +91,6 @@ export async function removeNoteTag(tag, sourceNoteId, sourceAccountId) {
   }
 }
 
-export async function receiveStateSync(stateSync) {}
-
 export async function applyStateSync(stateUpdate) {
   const {
     blockNum,
@@ -102,7 +100,7 @@ export async function applyStateSync(stateUpdate) {
     blockHasRelevantNotes,
     serializedNodeIds,
     serializedNodes,
-    noteTagsToRemove,
+    noteTagsIdsToRemove,
     serializedInputNotes,
     serializedOutputNotes,
     accountUpdates,
@@ -218,7 +216,7 @@ export async function applyStateSync(stateUpdate) {
         serializedNodeIds,
         serializedNodes
       );
-      await updateCommittedNoteTags(tx, noteTagsToRemove);
+      await updateCommittedNoteTags(tx, noteTagsIdsToRemove);
     }
   );
 }

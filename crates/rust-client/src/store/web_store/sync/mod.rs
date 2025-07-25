@@ -166,7 +166,7 @@ impl WebStore {
         };
 
         // Tags to remove
-        let note_tags_to_remove_as_str: Vec<String> = note_updates
+        let note_tags_ids_to_remove: Vec<String> = note_updates
             .updated_input_notes()
             .filter_map(|note_update| {
                 let note = note_update.inner();
@@ -208,7 +208,7 @@ impl WebStore {
             block_has_relevant_notes,
             serialized_node_ids,
             serialized_nodes,
-            note_tags_to_remove: note_tags_to_remove_as_str,
+            note_tags_ids_to_remove,
             serialized_input_notes,
             serialized_output_notes,
             account_updates: account_updates
