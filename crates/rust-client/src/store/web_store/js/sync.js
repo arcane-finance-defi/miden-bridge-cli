@@ -104,7 +104,7 @@ export async function applyStateSync(stateUpdate) {
     blockHasRelevantNotes, // Flags indicating which blocks have relevant notes
     serializedNodeIds, // IDs for new authentication nodes
     serializedNodes, // Authentication node data for merkle proofs
-    noteTagsIdsToRemove, // Note tags to be cleaned up/removed
+    committedNoteIds, // Note tags to be cleaned up/removed
     serializedInputNotes, // Input notes consumed in transactions
     serializedOutputNotes, // Output notes created in transactions
     accountUpdates, // Account state changes
@@ -116,10 +116,8 @@ export async function applyStateSync(stateUpdate) {
   const partialBlockchainPeaks = reconstructFlattenedVec(
     flattenedPartialBlockChainPeaks
   );
-  // Create promises to insert each input note.
-  // Each note will have its own transaction,
-  // and therefore, nested inside the final transaction
-  // inside this function.
+  // Create promises to insert each input note. Each note will have its own transaction,
+  // and therefore, nested inside the final transaction inside this function.
   serializedInputNotes.map((note) => {
     return upsertInputNote(
       note.noteId,
@@ -135,8 +133,7 @@ export async function applyStateSync(stateUpdate) {
     );
   });
 
-  // See comment above, the same thing applies here,
-  // but for Output Notes.
+  // See comment above, the same thing applies here, but for Output Notes.
   serializedOutputNotes.map((note) => {
     return upsertOutputNote(
       note.noteId,
@@ -236,7 +233,7 @@ export async function applyStateSync(stateUpdate) {
         serializedNodeIds,
         serializedNodes
       );
-      await updateCommittedNoteTags(tx, noteTagsIdsToRemove);
+      await updateCommittedNoteTags(tx, committedNoteIds);
     }
   );
 }

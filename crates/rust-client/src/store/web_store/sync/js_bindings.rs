@@ -94,8 +94,8 @@ pub struct JsStateSyncUpdate {
     pub serialized_nodes: Vec<String>,
 
     /// IDs of note tags that should be removed from the client's local state.
-    #[wasm_bindgen(js_name = "noteTagsIdsToRemove")]
-    pub note_tags_ids_to_remove: Vec<String>,
+    #[wasm_bindgen(js_name = "committedNoteIds")]
+    pub committed_note_ids: Vec<String>,
 
     /// Input notes for this state update in serialized form.
     #[wasm_bindgen(js_name = "serializedInputNotes")]
