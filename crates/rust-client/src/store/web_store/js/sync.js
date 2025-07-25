@@ -91,25 +91,35 @@ export async function removeNoteTag(tag, sourceNoteId, sourceAccountId) {
   }
 }
 
+/*
+ * Takes a `JsStateSyncUpdate` object and writes the state update into the store.
+ * @param {JsStateSyncUpdate}
+ */
 export async function applyStateSync(stateUpdate) {
   const {
-    blockNum,
-    flattenedNewBlockHeaders,
-    flattenedPartialBlockChainPeaks,
-    newBlockNums,
-    blockHasRelevantNotes,
-    serializedNodeIds,
-    serializedNodes,
-    noteTagsIdsToRemove,
-    serializedInputNotes,
-    serializedOutputNotes,
-    accountUpdates,
-    transactionUpdates,
+    blockNum, // Target block number for this sync
+    flattenedNewBlockHeaders, // Serialized block headers to be reconstructed
+    flattenedPartialBlockChainPeaks, // Serialized blockchain peaks for verification
+    newBlockNums, // Block numbers corresponding to new headers
+    blockHasRelevantNotes, // Flags indicating which blocks have relevant notes
+    serializedNodeIds, // IDs for new authentication nodes
+    serializedNodes, // Authentication node data for merkle proofs
+    noteTagsIdsToRemove, // Note tags to be cleaned up/removed
+    serializedInputNotes, // Input notes consumed in transactions
+    serializedOutputNotes, // Output notes created in transactions
+    accountUpdates, // Account state changes
+    transactionUpdates, // Transaction records and scripts
   } = stateUpdate;
+  // Block headers and Blockchain peaks are flattened before calling
+  // this function, here we rebuild them.
   const newBlockHeaders = reconstructFlattenedVec(flattenedNewBlockHeaders);
   const partialBlockchainPeaks = reconstructFlattenedVec(
     flattenedPartialBlockChainPeaks
   );
+  // Create promises to insert each input note.
+  // Each note will have its own transaction,
+  // and therefore, nested inside the final transaction
+  // inside this function.
   serializedInputNotes.map((note) => {
     return upsertInputNote(
       note.noteId,
@@ -125,6 +135,8 @@ export async function applyStateSync(stateUpdate) {
     );
   });
 
+  // See comment above, the same thing applies here,
+  // but for Output Notes.
   serializedOutputNotes.map((note) => {
     return upsertOutputNote(
       note.noteId,
@@ -138,9 +150,11 @@ export async function applyStateSync(stateUpdate) {
     );
   });
 
+  // Fit insert operations into a single promise.
   let inputNotesWriteOp = Promise.all(serializedInputNotes);
   let outputNotesWriteOp = Promise.all(serializedOutputNotes);
 
+  // Promises to insert each transaction update.
   transactionUpdates.flatMap((transactionRecord) => {
     [
       insertTransactionScript(
@@ -158,8 +172,10 @@ export async function applyStateSync(stateUpdate) {
     ];
   });
 
+  // Fit the upsert transactions into a single promise
   let transactionWriteOp = Promise.all(transactionUpdates);
 
+  // Promises to insert each account update.
   accountUpdates.flatMap((accountUpdate) => {
     return [
       insertAccountStorage(
@@ -185,6 +201,9 @@ export async function applyStateSync(stateUpdate) {
 
   let accountUpdatesWriteOp = Promise.all(accountUpdates);
 
+  // Write everything in a single transaction, this transaction will atomically do the operations
+  // below, since every operation here (or at least, most of them), is done in a nested transaction.
+  // For more information on this, check: https://dexie.org/docs/Dexie/Dexie.transaction()
   return await db.transaction(
     "rw",
     stateSync,
@@ -201,6 +220,7 @@ export async function applyStateSync(stateUpdate) {
         transactionWriteOp,
         accountUpdatesWriteOp,
       ]);
+      // Update to the new block number
       await updateSyncHeight(tx, blockNum);
       for (let i = 0; i < newBlockHeaders.length; i++) {
         await updateBlockHeader(
