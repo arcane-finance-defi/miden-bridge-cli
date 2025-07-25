@@ -6,11 +6,15 @@
 
 # Class: JsAccountUpdate
 
+Represents an update to a single account's state.
+
 ## Properties
 
 ### accountCommitment
 
 > **accountCommitment**: `string`
+
+The cryptographic commitment representing this account's current state.
 
 ***
 
@@ -18,11 +22,15 @@
 
 > **accountId**: `string`
 
+ID for this account.
+
 ***
 
 ### assetBytes
 
 > **assetBytes**: `Uint8Array`
+
+Serialized asset data for this account.
 
 ***
 
@@ -30,11 +38,15 @@
 
 > **assetVaultRoot**: `string`
 
+The merkle root of the account's asset vault.
+
 ***
 
 ### codeRoot
 
 > **codeRoot**: `string`
+
+The merkle root of the account's executable code.
 
 ***
 
@@ -42,11 +54,15 @@
 
 > **committed**: `boolean`
 
+Whether this account update has been committed.
+
 ***
 
 ### nonce
 
 > **nonce**: `string`
+
+The account's transaction nonce as a string.
 
 ***
 
@@ -54,11 +70,15 @@
 
 > **storageRoot**: `string`
 
+The merkle root of the account's storage trie.
+
 ***
 
 ### storageSlots
 
 > **storageSlots**: `Uint8Array`
+
+Serialized storage slot data for this account.
 
 ## Accessors
 
@@ -68,6 +88,8 @@
 
 > **get** **accountSeed**(): `Uint8Array`
 
+Optional seed data for the account.
+
 ##### Returns
 
 `Uint8Array`
@@ -75,6 +97,8 @@
 #### Set Signature
 
 > **set** **accountSeed**(`value`): `void`
+
+Optional seed data for the account.
 
 ##### Parameters
 
