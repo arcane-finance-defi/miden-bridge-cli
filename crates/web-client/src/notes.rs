@@ -117,4 +117,24 @@ impl WebClient {
             Err(JsValue::from_str("Client not initialized"))
         }
     }
+
+    #[wasm_bindgen(js_name = "checkNoteCommitedByNoteId")]
+    pub async fn check_note_commited_by_note_id(
+        &mut self,
+        id: NoteIdModel
+    ) -> Result<bool, JsValue> {
+        if let Some(client) = self.get_mut_inner() {
+            let result = client
+                .get_note_inclusion_proof(id.into())
+                .await
+                .map_err(|err| js_error_with_context(err, "failed to get note inclusion proof"))?;
+
+            match result {
+                Some(_) => Ok(true),
+                None => Ok(false),
+            }
+        } else {
+            Err(JsValue::from_str("Client not initialized"))
+        }
+    }
 }
