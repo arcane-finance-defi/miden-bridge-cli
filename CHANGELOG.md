@@ -14,6 +14,7 @@
 * `NoteScript` now has a `toString` method that prints its own MAST source [(#1082)](https://github.com/0xMiden/miden-client/pull/1082).
 * Added a `NoteScript` getter for the Web Client `Note` model ([#1135](https://github.com/0xMiden/miden-client/pull/1135/)).
 * [BREAKING] Changed `OnNoteReceived` from closure to trait object ([#1080](https://github.com/0xMiden/miden-client/pull/1080)).
+* Exposed signatures and serialization for public keys and secret keys [(#1107)](https://github.com/0xMiden/miden-client/pull/1107)
 
 ### Features
 
