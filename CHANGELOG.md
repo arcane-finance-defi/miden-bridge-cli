@@ -4,7 +4,7 @@
 
 ### Fixes
 
-* Adds `AuthScheme::NoAuth` support to `Client` (#1123).
+* Added `AuthScheme::NoAuth` support to `Client` (#1123).
 
 ## 0.10.1 (2025-07-26)
 
