@@ -125,8 +125,8 @@ export interface IPartialBlockchainNode {
 export interface ITag {
   id?: number;
   tag: string;
-  source_note_id: string;
-  source_account_id: string;
+  sourceNoteId: string;
+  sourceAccountId: string;
 }
 
 export interface IForeignAccountCode {
