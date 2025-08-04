@@ -184,7 +184,7 @@ function indexes(...items: string[]): string {
 
 db.on("populate", () => {
   // Populate the stateSync table with default values
-  db.table("stateSync").put({ id: 1, blockNum: "0" });
+  stateSync.put({ id: 1, blockNum: "0" } as IStateSync);
 });
 
 const accountCodes = db.table<IAccountCode, string>(Table.AccountCode);
