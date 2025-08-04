@@ -97,6 +97,7 @@ export interface IOutputNote {
   stateDiscriminant: string;
   nullifier: string;
   expectedHeight: BigInt;
+  state: Blob;
 }
 
 export interface INotesScript {
@@ -111,7 +112,9 @@ export interface IStateSync {
 
 export interface IBlockHeader {
   blockNum: number;
-  hasClientNotes: boolean;
+  header: Blob;
+  partialBlockchainPeaks: Blob;
+  hasClientNotes: string;
 }
 
 export interface IPartialBlockchainNode {
@@ -122,8 +125,8 @@ export interface IPartialBlockchainNode {
 export interface ITag {
   id?: number;
   tag: string;
-  source_note_id?: string;
-  source_account_id?: string;
+  source_note_id: string;
+  source_account_id: string;
 }
 
 export interface IForeignAccountCode {
