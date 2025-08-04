@@ -159,10 +159,6 @@ rust-client-ts-build:
 
 # --- Check ---------------------------------------------------------------------------------------
 
-.PHONY: rust-client-ts-check
-rust-client-ts-check: rust-client-type-gen
-	cd ./crates/rust-client/src/store/web_store && yarn && yarn tsc --noEmit
-
 .PHONY: check
 check: ## Build the CLI binary and client library in release mode
 	cargo check --workspace --exclude miden-client-web --exclude testing-remote-prover --release
