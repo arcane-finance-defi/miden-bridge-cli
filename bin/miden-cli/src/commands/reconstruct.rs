@@ -1,8 +1,12 @@
+use std::fs::File;
+use std::io::Write;
+use std::path::PathBuf;
 use clap::{Parser, ValueEnum};
 use miden_lib::note::utils::build_p2id_recipient;
 use miden_objects::asset::FungibleAsset;
-use miden_objects::note::{NoteAssets, NoteDetails, NoteFile};
-use miden_objects::utils::parse_hex_string_as_word;
+use miden_objects::{Felt, FieldElement};
+use miden_objects::note::{Note, NoteAssets, NoteDetails, NoteExecutionHint, NoteFile, NoteMetadata, NoteType};
+use miden_objects::utils::{parse_hex_string_as_word, Serializable};
 use tracing::{info, warn};
 use miden_client::Client;
 use crate::crosschain::reconstruct_crosschain_note;
@@ -56,7 +60,15 @@ pub struct ReconstructCmd {
 
     /// P2ID asset amount
     #[clap(short, long)]
-    asset_amount: Option<u64>
+    asset_amount: Option<u64>,
+
+    /// Should the resulting note be exported as file
+    #[clap(long)]
+    export: Option<bool>,
+
+    /// Desired filename for the binary file. Defaults to the note ID if not provided.
+    #[arg(short, long)]
+    filename: Option<PathBuf>,
 }
 
 impl ReconstructCmd {
@@ -126,10 +138,49 @@ impl ReconstructCmd {
         if check_note_existence(client, &note_id).await
             .map_err(|e| CliError::Internal(Box::new(e)))? {
 
-            client.import_note(note_text).await
-                .map_err(|e| CliError::Internal(Box::new(e)))?;
 
-            info!("Note {} successfully imported", note_id.to_hex());
+            if let Some(true) = self.export {
+                let (note_details, tag) = match note_text {
+                    NoteFile::NoteDetails { details, tag: Some(tag), .. } => (details, tag),
+                    _ => unreachable!()
+                };
+
+                let proof = client.get_note_inclusion_proof(note_id).await?.unwrap();
+
+                let note_text = NoteFile::NoteWithProof(
+                    Note::new(
+                        note_details.assets().clone(),
+                        NoteMetadata::new(
+                            parse_account_id(client, self.faucet_id.clone().unwrap().as_str()).await?,
+                            NoteType::Private,
+                            tag,
+                            NoteExecutionHint::Always,
+                            Felt::ZERO
+                        ).map_err(|err| CliError::Internal(Box::new(err)))?,
+                        note_details.recipient().clone()
+                    ),
+                    proof
+                );
+
+                let file_path = if let Some(filename) = &self.filename {
+                    filename.clone()
+                } else {
+                    let current_dir = std::env::current_dir()?;
+                    current_dir.join(format!("{}.mno", note_id.inner()))
+                };
+
+                info!("Writing file to {}", file_path.to_string_lossy());
+                let mut file = File::create(file_path)?;
+                file.write_all(&note_text.to_bytes()).map_err(CliError::IO)?;
+
+                println!("Successfully exported note {note_id}");
+
+            } else {
+                client.import_note(note_text).await
+                    .map_err(|e| CliError::Internal(Box::new(e)))?;
+
+                info!("Note {} successfully imported", note_id.to_hex());
+            }
         } else {
             warn!("Note {} was not found", note_id.to_hex());
         }
