@@ -566,7 +566,6 @@ export async function upsertForeignAccountCode(
   codeRoot: string
 ) {
   try {
-    // FIXME: Re-add this
     await insertAccountCode(codeRoot, code);
 
     const data = {
