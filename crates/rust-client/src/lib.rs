@@ -28,6 +28,7 @@
 //!
 //! Additionally, the crate re-exports several utility modules:
 //!
+//! - **Assembly:** Types for working with Miden Assembly.
 //! - **Assets:** Types and utilities for working with assets.
 //! - **Auth:** Authentication-related types and functionalities.
 //! - **Blocks:** Types for handling block headers.
@@ -143,6 +144,18 @@ mod errors;
 // RE-EXPORTS
 // ================================================================================================
 
+/// Provides types and utilities for working with Miden Assembly.
+pub mod assembly {
+    pub use miden_objects::assembly::{
+        Assembler,
+        DefaultSourceManager,
+        Library,
+        LibraryPath,
+        Module,
+        ModuleKind,
+    };
+}
+
 /// Provides types and utilities for working with assets within the Miden network.
 pub mod asset {
     pub use miden_objects::AssetError;
@@ -184,9 +197,12 @@ pub mod crypto {
         InOrderIndex,
         LeafIndex,
         MerklePath,
+        MerkleStore,
+        MerkleTree,
         MmrDelta,
         MmrPeaks,
         MmrProof,
+        NodeIndex,
         SmtLeaf,
         SmtProof,
     };
@@ -194,7 +210,7 @@ pub mod crypto {
 }
 
 pub use errors::{AuthenticationError, ClientError, IdPrefixFetchError};
-pub use miden_objects::{Felt, ONE, StarkField, Word, ZERO};
+pub use miden_objects::{EMPTY_WORD, Felt, ONE, StarkField, Word, ZERO};
 pub use miden_remote_prover_client::remote_prover::tx_prover::RemoteTransactionProver;
 pub use miden_tx::ExecutionOptions;
 
@@ -211,7 +227,7 @@ pub mod testing {
 
 use alloc::sync::Arc;
 
-use miden_lib::utils::ScriptBuilder;
+pub use miden_lib::utils::ScriptBuilder;
 use miden_objects::block::BlockNumber;
 use miden_objects::crypto::rand::FeltRng;
 use miden_tx::LocalTransactionProver;

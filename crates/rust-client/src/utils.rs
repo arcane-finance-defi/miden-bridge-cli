@@ -16,6 +16,7 @@ pub use miden_tx::utils::{
     ToHex,
     bytes_to_hex_string,
     hex_to_bytes,
+    word_to_masm_push_string,
 };
 
 use crate::alloc::borrow::ToOwned;
