@@ -3,9 +3,10 @@ use miden_client::account::{Account, AccountStorageMode};
 use miden_client::asset::{Asset, FungibleAsset};
 use miden_client::note::{Note, NoteDetails, NoteFile, NoteType, build_swap_tag};
 use miden_client::testing::common::*;
-use miden_client::testing::config::ClientConfig;
 use miden_client::transaction::{SwapTransactionData, TransactionRequestBuilder};
 use test_case_marker::test_case;
+
+use crate::tests::config::ClientConfig;
 
 // SWAP FULLY ONCHAIN
 // ================================================================================================
@@ -14,11 +15,12 @@ use test_case_marker::test_case;
 pub async fn swap_fully_onchain(client_config: ClientConfig) -> Result<()> {
     const OFFERED_ASSET_AMOUNT: u64 = 1;
     const REQUESTED_ASSET_AMOUNT: u64 = 25;
-    let (mut client1, authenticator_1) = create_test_client(client_config.clone()).await?;
+    let (mut client1, authenticator_1) = client_config.clone().into_client().await?;
     wait_for_node(&mut client1).await;
-    let (mut client2, authenticator_2) =
-        create_test_client(ClientConfig::default().with_rpc_endpoint(client_config.rpc_endpoint()))
-            .await?;
+    let (mut client2, authenticator_2) = ClientConfig::default()
+        .with_rpc_endpoint(client_config.rpc_endpoint())
+        .into_client()
+        .await?;
 
     client1.sync_state().await?;
     client2.sync_state().await?;
@@ -193,11 +195,12 @@ pub async fn swap_fully_onchain(client_config: ClientConfig) -> Result<()> {
 pub async fn swap_private(client_config: ClientConfig) -> Result<()> {
     const OFFERED_ASSET_AMOUNT: u64 = 1;
     const REQUESTED_ASSET_AMOUNT: u64 = 25;
-    let (mut client1, authenticator_1) = create_test_client(client_config.clone()).await?;
+    let (mut client1, authenticator_1) = client_config.clone().into_client().await?;
     wait_for_node(&mut client1).await;
-    let (mut client2, authenticator_2) =
-        create_test_client(ClientConfig::default().with_rpc_endpoint(client_config.rpc_endpoint()))
-            .await?;
+    let (mut client2, authenticator_2) = ClientConfig::default()
+        .with_rpc_endpoint(client_config.rpc_endpoint())
+        .into_client()
+        .await?;
 
     client1.sync_state().await?;
     client2.sync_state().await?;

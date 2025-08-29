@@ -2211,6 +2211,7 @@ dependencies = [
  "test-case-marker",
  "tokio",
  "url",
+ "uuid",
 ]
 
 [[package]]
