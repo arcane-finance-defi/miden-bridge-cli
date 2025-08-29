@@ -5,7 +5,6 @@ use miden_client::auth::AuthSecretKey;
 use miden_client::crypto::SecretKey;
 use miden_client::rpc::domain::account::{AccountStorageRequirements, StorageMapKey};
 use miden_client::testing::common::*;
-use miden_client::testing::config::ClientConfig;
 use miden_client::transaction::{
     AdviceInputs,
     ForeignAccount,
@@ -14,6 +13,8 @@ use miden_client::transaction::{
 };
 use miden_client::{Felt, ScriptBuilder, Word};
 use test_case_marker::test_case;
+
+use crate::tests::config::ClientConfig;
 
 // FPI TESTS
 // ================================================================================================
@@ -33,7 +34,7 @@ pub async fn standard_fpi_private(client_config: ClientConfig) -> Result<()> {
 
 #[test_case]
 pub async fn fpi_execute_program(client_config: ClientConfig) -> Result<()> {
-    let (mut client, mut keystore) = create_test_client(client_config).await?;
+    let (mut client, mut keystore) = client_config.into_client().await?;
     client.sync_state().await?;
 
     // Deploy a foreign account
@@ -108,7 +109,7 @@ pub async fn fpi_execute_program(client_config: ClientConfig) -> Result<()> {
 
 #[test_case]
 pub async fn nested_fpi_calls(client_config: ClientConfig) -> Result<()> {
-    let (mut client, mut keystore) = create_test_client(client_config).await?;
+    let (mut client, mut keystore) = client_config.into_client().await?;
     wait_for_node(&mut client).await;
 
     let (inner_foreign_account, inner_proc_root) = deploy_foreign_account(
@@ -216,7 +217,7 @@ pub async fn nested_fpi_calls(client_config: ClientConfig) -> Result<()> {
 /// transaction that calls the foreign account's procedure via FPI. The test also verifies that the
 /// foreign account's code is correctly cached after the transaction.
 async fn standard_fpi(storage_mode: AccountStorageMode, client_config: ClientConfig) -> Result<()> {
-    let (mut client, mut keystore) = create_test_client(client_config).await?;
+    let (mut client, mut keystore) = client_config.into_client().await?;
     wait_for_node(&mut client).await;
 
     let (foreign_account, proc_root) = deploy_foreign_account(

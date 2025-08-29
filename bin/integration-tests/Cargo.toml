@@ -31,6 +31,7 @@ regex       = { version = "1.0" }
 serde       = { features = ["derive"], version = "1.0" }
 tokio       = { workspace = true }
 url         = { version = "2.5.4" }
+uuid        = { version = "1.10" }
 
 [build-dependencies]
 proc-macro2 = "1.0"
