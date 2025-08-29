@@ -44,6 +44,9 @@ impl RpcClient {
     ///   `null`.
     /// - Public notes: Returns the full `input_note` with inclusion proof, alongside metadata and
     ///   ID.
+    // TODO: try to remove this allow - conflicts with the above "note_ids" and with what typedoc
+    // expects
+    #[allow(clippy::doc_markdown)] 
     #[wasm_bindgen(js_name = "getNotesById")]
     pub async fn get_notes_by_id(
         &self,
