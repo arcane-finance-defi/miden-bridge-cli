@@ -50,6 +50,12 @@
 * Added `SigningInputs` to Web Client ([#1160](https://github.com/0xMiden/miden-client/pull/1160)).
 * Added an `RpcClient` to the Web Client, with a `getNotesById` call ([#1191](https://github.com/0xMiden/miden-client/pull/1191)).
 
+## 0.10.2 (2025-08-04)
+
+### Fixes
+
+* Added `AuthScheme::NoAuth` support to `Client` (#1123).
+
 ## 0.10.1 (2025-07-26)
 
 * Avoid passing unneeded nodes to `PartialMmr::from_parts` (#1081).
