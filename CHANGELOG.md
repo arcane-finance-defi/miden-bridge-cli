@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0 (TBD)
+
+### Changes
+
+* [BREAKING] Incremented MSRV to 1.89.
+
+
+## 0.11.2 (2025-09-02)
+* Added WASM bindings for the `Address` type from the miden_objects crate([#1244](https://github.com/0xMiden/miden-client/pull/1244))
+
 ## 0.11.1 (2025-08-31)
 
 ### Fixes
