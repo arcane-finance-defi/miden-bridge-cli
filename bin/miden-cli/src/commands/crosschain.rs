@@ -73,6 +73,7 @@ impl CrosschainCmd {
             client.rng().draw_word(),
             dest_chain,
             address_felts,
+            None,
             faucet_id,
             self.asset_amount,
             sender,
