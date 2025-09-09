@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.4
+
+* Added a mutable getter for `TransactionRequest`'s advice map ([#1254](https://github.com/0xMiden/miden-client/pull/1254)).
+
 ## 0.11.3 (2025-09-08)
 
 * Refreshed dependencies ([#1269](https://github.com/0xMiden/miden-client/pull/1269)).
