@@ -1,187 +1,136 @@
-import { transactions, transactionScripts } from "./schema.js";
-
+import { transactions, transactionScripts, } from "./schema.js";
+import { Dexie } from "dexie";
+import { logWebStoreError, mapOption, uint8ArrayToBase64 } from "./utils.js";
 const IDS_FILTER_PREFIX = "Ids:";
+const EXPIRED_BEFORE_FILTER_PREFIX = "ExpiredPending:";
+const STATUS_COMMITTED_VARIANT = 1;
+const STATUS_DISCARDED_VARIANT = 2;
 export async function getTransactions(filter) {
-  let transactionRecords;
-
-  try {
-    if (filter === "Uncommitted") {
-      transactionRecords = await transactions
-        .filter(
-          (tx) => tx.commitHeight === undefined || tx.commitHeight === null
-        )
-        .toArray();
-    } else if (filter.startsWith(IDS_FILTER_PREFIX)) {
-      const idsString = filter.substring(IDS_FILTER_PREFIX.length);
-      const ids = idsString.split(",");
-
-      if (ids.length > 0) {
-        transactionRecords = await transactions
-          .where("id")
-          .anyOf(ids)
-          .toArray();
-      } else {
-        transactionRecords = [];
-      }
-    } else {
-      transactionRecords = await transactions.toArray();
-    }
-
-    if (transactionRecords.length === 0) {
-      return [];
-    }
-
-    const scriptRoots = transactionRecords.map((transactionRecord) => {
-      return transactionRecord.scriptRoot;
-    });
-
-    const scripts = await transactionScripts
-      .where("scriptRoot")
-      .anyOf(scriptRoots)
-      .toArray();
-
-    // Create a map of scriptRoot to script for quick lookup
-    const scriptMap = new Map();
-    scripts.forEach((script) => {
-      scriptMap.set(script.scriptRoot, script.txScript);
-    });
-
-    const processedTransactions = await Promise.all(
-      transactionRecords.map(async (transactionRecord) => {
-        let txScriptBase64 = null;
-
-        if (transactionRecord.scriptRoot) {
-          const txScript = scriptMap.get(transactionRecord.scriptRoot);
-
-          if (txScript) {
-            let txScriptArrayBuffer = await txScript.arrayBuffer();
-            let txScriptArray = new Uint8Array(txScriptArrayBuffer);
-            txScriptBase64 = uint8ArrayToBase64(txScriptArray);
-          }
+    let transactionRecords = [];
+    try {
+        if (filter === "Uncommitted") {
+            transactionRecords = await transactions
+                .filter((tx) => tx.statusVariant !== STATUS_COMMITTED_VARIANT)
+                .toArray();
         }
-
-        if (transactionRecord.discardCause) {
-          let discardCauseArrayBuffer =
-            await transactionRecord.discardCause.arrayBuffer();
-          let discardCauseArray = new Uint8Array(discardCauseArrayBuffer);
-          let discardCauseBase64 = uint8ArrayToBase64(discardCauseArray);
-          transactionRecord.discardCause = discardCauseBase64;
+        else if (filter.startsWith(IDS_FILTER_PREFIX)) {
+            const idsString = filter.substring(IDS_FILTER_PREFIX.length);
+            const ids = idsString.split(",");
+            if (ids.length > 0) {
+                transactionRecords = await transactions
+                    .where("id")
+                    .anyOf(ids)
+                    .toArray();
+            }
+            else {
+                transactionRecords = [];
+            }
         }
-
-        let detailsArrayBuffer = await transactionRecord.details.arrayBuffer();
-        let detailsArray = new Uint8Array(detailsArrayBuffer);
-        let detailsBase64 = uint8ArrayToBase64(detailsArray);
-        transactionRecord.details = detailsBase64;
-
-        let data = {
-          id: transactionRecord.id,
-          details: transactionRecord.details,
-          scriptRoot: transactionRecord.scriptRoot
-            ? transactionRecord.scriptRoot
-            : null,
-          txScript: txScriptBase64,
-          blockNum: transactionRecord.blockNum,
-          commitHeight: transactionRecord.commitHeight
-            ? transactionRecord.commitHeight
-            : null,
-          discardCause: transactionRecord.discardCause
-            ? transactionRecord.discardCause
-            : null,
-        };
-
-        return data;
-      })
-    );
-
-    return processedTransactions;
-  } catch (err) {
-    console.error("Failed to get transactions: ", err.toString());
-    throw err;
-  }
+        else if (filter.startsWith(EXPIRED_BEFORE_FILTER_PREFIX)) {
+            const blockNumString = filter.substring(EXPIRED_BEFORE_FILTER_PREFIX.length);
+            const blockNum = parseInt(blockNumString);
+            transactionRecords = await transactions
+                .filter((tx) => tx.blockNum < blockNum &&
+                tx.statusVariant !== STATUS_COMMITTED_VARIANT &&
+                tx.statusVariant !== STATUS_DISCARDED_VARIANT)
+                .toArray();
+        }
+        else {
+            transactionRecords = await transactions.toArray();
+        }
+        if (transactionRecords.length === 0) {
+            return [];
+        }
+        const scriptRoots = transactionRecords
+            .map((transactionRecord) => {
+            return transactionRecord.scriptRoot;
+        })
+            .filter((scriptRoot) => scriptRoot != undefined);
+        const scripts = await transactionScripts
+            .where("scriptRoot")
+            .anyOf(scriptRoots)
+            .toArray();
+        // Create a map of scriptRoot to script for quick lookup
+        const scriptMap = new Map();
+        scripts.forEach((script) => {
+            if (script.txScript) {
+                scriptMap.set(script.scriptRoot, script.txScript);
+            }
+        });
+        const processedTransactions = await Promise.all(transactionRecords.map(async (transactionRecord) => {
+            let txScriptBase64 = undefined;
+            if (transactionRecord.scriptRoot) {
+                const txScript = scriptMap.get(transactionRecord.scriptRoot);
+                if (txScript) {
+                    const txScriptArrayBuffer = await txScript.arrayBuffer();
+                    const txScriptArray = new Uint8Array(txScriptArrayBuffer);
+                    txScriptBase64 = uint8ArrayToBase64(txScriptArray);
+                }
+            }
+            const detailsArrayBuffer = await transactionRecord.details.arrayBuffer();
+            const detailsArray = new Uint8Array(detailsArrayBuffer);
+            const detailsBase64 = uint8ArrayToBase64(detailsArray);
+            const statusArrayBuffer = await transactionRecord.status.arrayBuffer();
+            const statusArray = new Uint8Array(statusArrayBuffer);
+            const statusBase64 = uint8ArrayToBase64(statusArray);
+            const data = {
+                id: transactionRecord.id,
+                details: detailsBase64,
+                scriptRoot: transactionRecord.scriptRoot,
+                txScript: txScriptBase64,
+                blockNum: transactionRecord.blockNum.toString(),
+                statusVariant: transactionRecord.statusVariant,
+                status: statusBase64,
+            };
+            return data;
+        }));
+        return processedTransactions;
+    }
+    catch (err) {
+        logWebStoreError(err, "Failed to get transactions");
+    }
 }
-
 export async function insertTransactionScript(scriptRoot, txScript) {
-  try {
-    // check if script root already exists
-    let record = await transactionScripts
-      .where("scriptRoot")
-      .equals(scriptRoot)
-      .first();
-
-    if (record) {
-      return;
+    try {
+        // check if script root already exists
+        const record = await transactionScripts
+            .where("scriptRoot")
+            .equals(scriptRoot)
+            .first();
+        if (record) {
+            return;
+        }
+        const scriptRootArray = new Uint8Array(scriptRoot);
+        const scriptRootBase64 = uint8ArrayToBase64(scriptRootArray);
+        const data = {
+            scriptRoot: scriptRootBase64,
+            txScript: mapOption(txScript, (txScript) => new Blob([new Uint8Array(txScript)])),
+        };
+        await transactionScripts.add(data);
     }
-
-    if (!scriptRoot) {
-      throw new Error("Script root must be provided");
+    catch (error) {
+        // Check if the error is because the record already exists
+        if (!(error instanceof Dexie.ConstraintError)) {
+            logWebStoreError(error, "Failed to insert transaction script");
+        }
     }
-
-    let scriptRootArray = new Uint8Array(scriptRoot);
-    let scriptRootBase64 = uint8ArrayToBase64(scriptRootArray);
-
-    let txScriptBlob = null;
-    if (txScript) {
-      txScriptBlob = new Blob([new Uint8Array(txScript)]);
-    }
-
-    const data = {
-      scriptRoot: scriptRootBase64,
-      txScript: txScriptBlob,
-    };
-
-    await transactionScripts.add(data);
-  } catch (error) {
-    // Check if the error is because the record already exists
-    if (error.name === "ConstraintError") {
-    } else {
-      console.error("Failed to insert transaction script: ", error.toString());
-      throw error;
-    }
-  }
 }
-
-export async function upsertTransactionRecord(
-  transactionId,
-  details,
-  scriptRoot,
-  blockNum,
-  committed,
-  discardCause
-) {
-  try {
-    let detailsBlob = new Blob([new Uint8Array(details)]);
-
-    let scriptRootBase64 = null;
-    if (scriptRoot !== null) {
-      let scriptRootArray = new Uint8Array(scriptRoot);
-      scriptRootBase64 = uint8ArrayToBase64(scriptRootArray);
+export async function upsertTransactionRecord(transactionId, details, blockNum, statusVariant, status, scriptRoot) {
+    try {
+        const detailsBlob = new Blob([new Uint8Array(details)]);
+        const statusBlob = new Blob([new Uint8Array(status)]);
+        const data = {
+            id: transactionId,
+            details: detailsBlob,
+            scriptRoot: mapOption(scriptRoot, (root) => uint8ArrayToBase64(root)),
+            blockNum: parseInt(blockNum, 10),
+            statusVariant,
+            status: statusBlob,
+        };
+        await transactions.put(data);
     }
-
-    let discardCauseBlob = null;
-    if (discardCause !== null) {
-      discardCauseBlob = new Blob([new Uint8Array(discardCause)]);
+    catch (err) {
+        logWebStoreError(err, "Failed to insert proven transaction data");
     }
-
-    const data = {
-      id: transactionId,
-      details: detailsBlob,
-      scriptRoot: scriptRootBase64,
-      blockNum: blockNum,
-      commitHeight: committed ? committed : null,
-      discardCause: discardCauseBlob,
-    };
-
-    await transactions.put(data);
-  } catch (err) {
-    console.error("Failed to insert proven transaction data: ", err.toString());
-    throw err;
-  }
 }
-
-function uint8ArrayToBase64(bytes) {
-  const binary = bytes.reduce(
-    (acc, byte) => acc + String.fromCharCode(byte),
-    ""
-  );
-  return btoa(binary);
-}
+//# sourceMappingURL=transactions.js.map
