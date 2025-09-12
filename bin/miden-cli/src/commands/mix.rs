@@ -3,6 +3,7 @@ use miden_objects::FieldElement;
 use miden_objects::note::{Note, NoteExecutionHint, NoteFile, NoteMetadata, NoteTag, NoteType};
 use miden_objects::utils::{Serializable, ToHex};
 use miden_client::{Client, Felt};
+use miden_client::auth::TransactionAuthenticator;
 use miden_client::store::{NoteExportType, NoteFilter};
 use crate::crosschain::reconstruct_crosschain_note;
 use crate::errors::CliError;
@@ -62,7 +63,8 @@ struct MixResponse {
 }
 
 impl MixCmd {
-    pub async fn execute(&self, client: &mut Client, mixer_url: CliEndpoint) -> Result<(), CliError> {
+    pub async fn execute<AUTH: TransactionAuthenticator + Sync + 'static>
+    (&self, client: &mut Client<AUTH>, mixer_url: CliEndpoint) -> Result<(), CliError> {
         client.sync_state().await?;
         let (_, note_id) = reconstruct_crosschain_note(
             &self.serial_number,

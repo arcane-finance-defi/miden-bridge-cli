@@ -9,9 +9,10 @@ use miden_objects::note::{Note, NoteAssets, NoteDetails, NoteExecutionHint, Note
 use miden_objects::utils::{parse_hex_string_as_word, Serializable};
 use tracing::{info, warn};
 use miden_client::Client;
+use miden_client::auth::TransactionAuthenticator;
 use crate::crosschain::reconstruct_crosschain_note;
 use crate::errors::CliError;
-use crate::notes::check_note_existence;
+use crate::notes::{check_note_existence, get_fetched_note_proof};
 use crate::utils::{bridge_note_tag, parse_account_id};
 // RECONSTRUCT COMMAND
 // ================================================================================================
@@ -72,7 +73,7 @@ pub struct ReconstructCmd {
 }
 
 impl ReconstructCmd {
-    pub async fn execute(&self, client: &mut Client) -> Result<(), CliError> {
+    pub async fn execute<AUTH: TransactionAuthenticator + Sync>(&self, client: &mut Client<AUTH>) -> Result<(), CliError> {
         client.sync_state().await?;
         let (note_text, note_id) = match self {
             Self {
@@ -88,7 +89,7 @@ impl ReconstructCmd {
                 let serial_number = parse_hex_string_as_word(serial_number)
                     .map_err(|_| CliError::InvalidArgument("serial-number".to_string()))?;
 
-                let recipient = build_p2id_recipient(receiver, serial_number.clone())
+                let recipient = build_p2id_recipient(receiver, serial_number.into())
                     .map_err(|e| CliError::Internal(Box::new(e)))?;
 
                 let note_details = NoteDetails::new(
@@ -145,7 +146,7 @@ impl ReconstructCmd {
                     _ => unreachable!()
                 };
 
-                let proof = client.get_note_inclusion_proof(note_id).await?.unwrap();
+                let proof = get_fetched_note_proof(note_id).await?.expect("note proof from RPC");
 
                 let note_text = NoteFile::NoteWithProof(
                     Note::new(
@@ -166,7 +167,7 @@ impl ReconstructCmd {
                     filename.clone()
                 } else {
                     let current_dir = std::env::current_dir()?;
-                    current_dir.join(format!("{}.mno", note_id.inner()))
+                    current_dir.join(format!("{}.mno", note_id))
                 };
 
                 info!("Writing file to {}", file_path.to_string_lossy());

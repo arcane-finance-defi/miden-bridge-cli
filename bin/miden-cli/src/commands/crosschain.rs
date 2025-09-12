@@ -1,5 +1,6 @@
 use clap::Parser;
 use miden_client::{Client, account::AccountId, Felt};
+use miden_client::auth::TransactionAuthenticator;
 use alloy_primitives::{Address, hex::FromHex};
 use miden_bridge::notes::BRIDGE_USECASE;
 use miden_objects::StarkField;
@@ -45,7 +46,7 @@ pub struct CrosschainCmd {
 }
 
 impl CrosschainCmd {
-    pub async fn execute(&self, mut client: Client) -> Result<(), CliError> {
+    pub async fn execute<AUTH: TransactionAuthenticator + Sync + 'static>(&self, mut client: Client<AUTH>) -> Result<(), CliError> {
         let faucet_id = AccountId::from_hex(&self.asset_faucet_id)
             .map_err(|e| CliError::AccountId(e, "Malformed Faucet account id hex".to_string()))?;
 

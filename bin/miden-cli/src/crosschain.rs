@@ -69,8 +69,8 @@ pub async fn reconstruct_crosschain_note(
     let faucet_id = AccountId::from_hex(faucet_id)?;
 
     let recipient = build_crosschain_recipient(
-        serial_number,
-        bridge_serial_number,
+        serial_number.into(),
+        bridge_serial_number.into(),
         *dest_chain,
         dest_addr
     )?;

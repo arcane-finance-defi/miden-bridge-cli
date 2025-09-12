@@ -10,6 +10,7 @@ use miden_client::{
     note::NoteFile,
     utils::Deserializable,
 };
+use miden_client::auth::TransactionAuthenticator;
 use tracing::info;
 use miden_client::keystore::KeyStoreError;
 use crate::{
@@ -26,7 +27,8 @@ pub struct ImportPublicCmd {
 }
 
 impl ImportPublicCmd {
-    pub async fn execute(&self, mut client: Client, keystore: CliKeyStore) -> Result<(), CliError> {
+    pub async fn execute<AUTH: TransactionAuthenticator + Sync>
+    (&self, mut client: Client<AUTH>, keystore: CliKeyStore) -> Result<(), CliError> {
         let account_id = AccountId::from_hex(self.account_id.as_str())
             .map_err(|e| CliError::AccountId(e, "Malformed Account id hex".to_string()))?;
 
@@ -42,8 +44,8 @@ impl ImportPublicCmd {
 // IMPORT ACCOUNT
 // ================================================================================================
 
-async fn import_account(
-    client: &mut Client,
+async fn import_account<AUTH: TransactionAuthenticator + Sync>(
+    client: &mut Client<AUTH>,
     keystore: &CliKeyStore,
     account_data_file_contents: &[u8],
     overwrite: bool,

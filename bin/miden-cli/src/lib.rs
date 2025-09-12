@@ -166,16 +166,6 @@ impl Cli {
             return Ok(());
         }
 
-        let log_level = if self.debug { Level::TRACE } else { Level::INFO };
-
-        let subscriber = tracing_subscriber::FmtSubscriber::builder()
-            .with_max_level(log_level)
-            .finish();
-
-
-        tracing::subscriber::set_global_default(subscriber)
-            .expect("setting default subscriber failed");
-
         // Define whether we want to use the executor's debug mode based on the env var and
         // the flag override
         let in_debug_mode = match env::var("MIDEN_DEBUG") {
@@ -206,6 +196,8 @@ impl Cli {
         let mut client = builder.build().await?;
 
         client.ensure_genesis_in_place().await?;
+
+        let rpc_api = Arc::new(TonicRpcClient::new(endpoint, timeout_ms.unwrap_or(10_000)));
 
         // Execute CLI command
         match &self.action {

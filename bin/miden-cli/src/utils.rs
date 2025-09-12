@@ -13,11 +13,6 @@ use super::{CLIENT_CONFIG_FILE_NAME, config::CliConfig, get_account_with_id_pref
 use crate::{errors::CliError, faucet_details_map::FaucetDetailsMap};
 use miden_bridge::notes::BRIDGE_USECASE;
 
-use super::config::CliConfig;
-use super::{CLIENT_CONFIG_FILE_NAME, get_account_with_id_prefix};
-use crate::errors::CliError;
-use crate::faucet_details_map::FaucetDetailsMap;
-
 pub(crate) fn bridge_note_tag() -> NoteTag {
     NoteTag::for_local_use_case(BRIDGE_USECASE, 0).unwrap()
 }

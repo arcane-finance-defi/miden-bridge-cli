@@ -1,6 +1,7 @@
 use miden_lib::note::utils::build_p2id_recipient;
 use miden_objects::crypto::utils::word_to_hex;
 use miden_client::Client;
+use miden_client::auth::TransactionAuthenticator;
 use miden_client::crypto::FeltRng;
 use crate::errors::CliError;
 use crate::crosschain::build_crosschain_recipient;
@@ -42,7 +43,7 @@ pub struct RecipientCmd {
 }
 
 impl RecipientCmd {
-    pub async fn execute(&self, mut client: Client) -> Result<(), CliError> {
+    pub async fn execute<AUTH: TransactionAuthenticator + Sync + 'static>(&self, mut client: Client<AUTH>) -> Result<(), CliError> {
         let rng = client.rng();
         let serial_number = rng.draw_word();
         let serial_number_hex = word_to_hex(&serial_number)

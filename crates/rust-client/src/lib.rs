@@ -101,7 +101,7 @@
 //!     .unwrap(),
 //!     tx_graceful_blocks,
 //!     max_block_number_delta,
-	"http://localhost:8001".to_string()
+//!	    "http://localhost:8001".to_string(),
 //! )
 //! .await
 //! .unwrap();
@@ -248,7 +248,7 @@ use store::Store;
 ///   as notes and transactions.
 /// - Connects to a Miden node to periodically sync with the current state of the network.
 /// - Executes, proves, and submits transactions to the network as directed by the user.
-pub struct Client {
+pub struct Client<AUTH> {
     /// The client's store, which provides a way to write and read entities to provide persistence.
     store: Arc<dyn Store>,
     /// An instance of [`FeltRng`] which provides randomness tools for generating new keys,
@@ -262,7 +262,7 @@ pub struct Client {
     tx_prover: Arc<LocalTransactionProver>,
     /// An instance of a [`TransactionAuthenticator`] which will be used by the transaction
     /// executor whenever a signature is requested from within the VM.
-    authenticator: Option<Arc<dyn TransactionAuthenticator>>,
+    authenticator: Option<Arc<AUTH>>,
     /// Options that control the transaction executor’s runtime behaviour (e.g. debug mode).
     exec_options: ExecutionOptions,
     /// The number of blocks that are considered old enough to discard pending transactions.
@@ -331,7 +331,7 @@ where
             tx_graceful_blocks,
             max_block_number_delta,
             mixer_url
-        }
+        })
     }
 
     /// Returns true if the client is in debug mode.
@@ -365,17 +365,6 @@ where
 
     pub fn mixer_url(&self) -> alloc::string::String {
         self.mixer_url.clone()
-    }
-
-    pub async fn get_note_inclusion_proof(&self, note_id: NoteId) -> Result<Option<NoteInclusionProof>, ClientError> {
-        let result = self.rpc_api.get_note_by_id(note_id).await;
-
-        match result {
-            Ok(FetchedNote::Private(_, _, proof)) => Ok(Some(proof)),
-            Ok(FetchedNote::Public(_, proof)) => Ok(Some(proof)),
-            Err(RpcError::NoteNotFound(_)) => Ok(None),
-            Err(err) => Err(ClientError::RpcError(err))
-        }
     }
 }
 

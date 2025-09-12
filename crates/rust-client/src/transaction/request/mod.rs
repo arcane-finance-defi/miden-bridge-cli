@@ -325,14 +325,8 @@ impl TransactionRequest {
         match &self.script_template {
             Some(TransactionScriptTemplate::CustomScript(script)) => Ok(script.clone()),
             Some(TransactionScriptTemplate::SendNotes(notes)) => Ok(account_interface
-                .build_send_notes_script(notes, self.expiration_delta, in_debug_mode)?),
-            Some(TransactionScriptTemplate::NoAuth) => {
-                let empty_script =
-                    TransactionScript::compile("begin nop end", TransactionKernel::assembler())?;
-
-                Ok(empty_script)
-            },
-            None => {
+                .build_send_notes_script(notes, self.expiration_delta, in_debug_mode.into())?),
+            None | Some(TransactionScriptTemplate::NoAuth) => {
                 let empty_script = ScriptBuilder::new(true).compile_tx_script("begin nop end")?;
 
                 Ok(empty_script)

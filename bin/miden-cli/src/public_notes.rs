@@ -41,7 +41,8 @@ pub fn get_public_bridge_output_note(input_note: InputNoteRecord) -> Result<Outp
         ZERO
     ).map_err(PublicNoteConstructorError::NoteMetadataCreationError)?;
 
-    let serial_num = Word::try_from(input_note.details().inputs().values()[..4].to_vec())
+    let serial_num: &[Felt; 4] = &input_note.details().inputs().values()[..4];
+    let serial_num = Word::try_from(&serial_num)
         .map_err(|_| PublicNoteConstructorError::MalformedSerialNumber)?;
 
     let inputs = NoteInputs::new(
