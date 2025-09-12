@@ -1,4 +1,6 @@
+use std::sync::Arc;
 use clap::Parser;
+use miden_client::rpc::NodeRpcClient;
 use miden_objects::FieldElement;
 use miden_objects::note::{Note, NoteExecutionHint, NoteFile, NoteMetadata, NoteTag, NoteType};
 use miden_objects::utils::{Serializable, ToHex};
@@ -64,7 +66,7 @@ struct MixResponse {
 
 impl MixCmd {
     pub async fn execute<AUTH: TransactionAuthenticator + Sync + 'static>
-    (&self, client: &mut Client<AUTH>, mixer_url: CliEndpoint) -> Result<(), CliError> {
+    (&self, client: &mut Client<AUTH>, rpc_api: Arc<dyn NodeRpcClient>, mixer_url: CliEndpoint) -> Result<(), CliError> {
         client.sync_state().await?;
         let (_, note_id) = reconstruct_crosschain_note(
             &self.serial_number,
@@ -77,8 +79,8 @@ impl MixCmd {
 
         let note_id_hex = note_id.to_hex();
         info!("Reconstructed note id: {note_id_hex}");
-
-        if check_note_existence(client, &note_id).await
+        
+        if check_note_existence(client, rpc_api, &note_id).await
             .map_err(|e| CliError::Internal(Box::new(e)))? {
             debug!("Sending note: {note_id_hex} to mixer operator");
 

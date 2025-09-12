@@ -7,6 +7,7 @@ use miden_objects::NoteError;
 use thiserror::Error;
 use miden_client::store::InputNoteRecord;
 use miden_client::ZERO;
+use miden_client::Felt;
 
 #[derive(Error, Debug)]
 pub enum PublicNoteConstructorError {
@@ -41,8 +42,8 @@ pub fn get_public_bridge_output_note(input_note: InputNoteRecord) -> Result<Outp
         ZERO
     ).map_err(PublicNoteConstructorError::NoteMetadataCreationError)?;
 
-    let serial_num: &[Felt; 4] = &input_note.details().inputs().values()[..4];
-    let serial_num = Word::try_from(&serial_num)
+    let serial_num = <&[Felt; 4]>::try_from(&input_note.details().inputs().values()[..4]).expect("from slice to array");
+    let serial_num = Word::try_from(serial_num)
         .map_err(|_| PublicNoteConstructorError::MalformedSerialNumber)?;
 
     let inputs = NoteInputs::new(

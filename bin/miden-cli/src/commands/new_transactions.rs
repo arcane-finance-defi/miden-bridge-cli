@@ -386,7 +386,7 @@ impl ConsumeNotesCmd {
 // EXECUTE TRANSACTION
 // ================================================================================================
 
-async fn execute_transaction<AUTH: TransactionAuthenticator + Sync + 'static>(
+pub async fn execute_transaction<AUTH: TransactionAuthenticator + Sync + 'static>(
     client: &mut Client<AUTH>,
     account_id: AccountId,
     transaction_request: TransactionRequest,

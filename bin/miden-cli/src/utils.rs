@@ -11,6 +11,8 @@ use tracing::info;
 use miden_client::utils::DeserializationError;
 use super::{CLIENT_CONFIG_FILE_NAME, config::CliConfig, get_account_with_id_prefix};
 use crate::{errors::CliError, faucet_details_map::FaucetDetailsMap};
+
+use miden_client::note::NoteTag;
 use miden_bridge::notes::BRIDGE_USECASE;
 
 pub(crate) fn bridge_note_tag() -> NoteTag {

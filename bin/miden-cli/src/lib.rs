@@ -11,16 +11,22 @@ use miden_client::builder::ClientBuilder;
 use miden_client::keystore::FilesystemKeyStore;
 use miden_client::store::{NoteFilter as ClientNoteFilter, OutputNoteRecord};
 use miden_client::{Client, DebugMode, IdPrefixFetchError};
+use miden_client::rpc::TonicRpcClient;
 use rand::rngs::StdRng;
 mod commands;
 use commands::account::AccountCmd;
+use commands::crosschain::CrosschainCmd;
 use commands::exec::ExecCmd;
 use commands::export::ExportCmd;
 use commands::import::ImportCmd;
 use commands::init::InitCmd;
+use commands::mix::MixCmd;
 use commands::new_account::{NewAccountCmd, NewWalletCmd};
 use commands::new_transactions::{ConsumeNotesCmd, MintCmd, SendCmd, SwapCmd};
 use commands::notes::NotesCmd;
+use commands::import_public::ImportPublicCmd;
+use commands::recipient::RecipientCmd;
+use commands::reconstruct::ReconstructCmd;
 use commands::sync::SyncCmd;
 use commands::tags::TagsCmd;
 use commands::transactions::TransactionCmd;
@@ -197,7 +203,12 @@ impl Cli {
 
         client.ensure_genesis_in_place().await?;
 
-        let rpc_api = Arc::new(TonicRpcClient::new(endpoint, timeout_ms.unwrap_or(10_000)));
+        let rpc_api = Arc::new(
+            TonicRpcClient::new(
+                &cli_config.rpc.endpoint.clone().into(),
+                cli_config.rpc.timeout_ms
+            )
+        );
 
         // Execute CLI command
         match &self.action {
@@ -221,9 +232,9 @@ impl Cli {
             Command::Swap(swap) => Box::pin(swap.execute(client)).await,
             Command::ConsumeNotes(consume_notes) => Box::pin(consume_notes.execute(client)).await,
             Command::Recipient(recipient) => recipient.execute(client).await,
-            Command::Reconstruct(reconstruct) => reconstruct.execute(&mut client).await,
+            Command::Reconstruct(reconstruct) => reconstruct.execute(&mut client, rpc_api).await,
             Command::Crosschain(crosschain) => crosschain.execute(client).await,
-            Command::Mix(mix) => mix.execute(&mut client, cli_config.mixer_url).await,
+            Command::Mix(mix) => mix.execute(&mut client, rpc_api, cli_config.mixer_url).await,
         }
     }
 

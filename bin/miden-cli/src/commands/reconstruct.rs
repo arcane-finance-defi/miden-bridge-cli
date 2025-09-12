@@ -1,7 +1,9 @@
 use std::fs::File;
 use std::io::Write;
+use std::sync::Arc;
 use std::path::PathBuf;
 use clap::{Parser, ValueEnum};
+use miden_client::rpc::NodeRpcClient;
 use miden_lib::note::utils::build_p2id_recipient;
 use miden_objects::asset::FungibleAsset;
 use miden_objects::{Felt, FieldElement};
@@ -73,7 +75,7 @@ pub struct ReconstructCmd {
 }
 
 impl ReconstructCmd {
-    pub async fn execute<AUTH: TransactionAuthenticator + Sync>(&self, client: &mut Client<AUTH>) -> Result<(), CliError> {
+    pub async fn execute<AUTH: TransactionAuthenticator + Sync + 'static>(&self, client: &mut Client<AUTH>, rpc_api: Arc<dyn NodeRpcClient>) -> Result<(), CliError> {
         client.sync_state().await?;
         let (note_text, note_id) = match self {
             Self {
@@ -136,7 +138,7 @@ impl ReconstructCmd {
             _ => Err(CliError::Input("Wrong arguments set".to_string()))
         }?;
 
-        if check_note_existence(client, &note_id).await
+        if check_note_existence(client, rpc_api.clone(), &note_id).await
             .map_err(|e| CliError::Internal(Box::new(e)))? {
 
 
@@ -146,7 +148,7 @@ impl ReconstructCmd {
                     _ => unreachable!()
                 };
 
-                let proof = get_fetched_note_proof(note_id).await?.expect("note proof from RPC");
+                let proof = get_fetched_note_proof(rpc_api.clone(), note_id).await?.expect("note proof from RPC");
 
                 let note_text = NoteFile::NoteWithProof(
                     Note::new(

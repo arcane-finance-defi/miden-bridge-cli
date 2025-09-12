@@ -1,15 +1,18 @@
+use std::sync::Arc;
 use miden_client::note::NoteInclusionProof;
 use miden_objects::note::NoteId;
 use miden_client::Client;
+use miden_client::ClientError;
 use miden_client::auth::TransactionAuthenticator;
-use miden_client::rpc::RpcError;
+use miden_client::rpc::{NodeRpcClient, RpcError};
 use crate::notes::errors::NotesErrors;
 
 pub async fn check_note_existence<AUTH: TransactionAuthenticator + Sync + 'static>(
     client: &mut Client<AUTH>,
+    rpc_api: Arc<dyn NodeRpcClient>,
     note_id: &NoteId,
 ) -> Result<bool, NotesErrors> {
-    let proof = get_fetched_note_proof(note_id.clone())
+    let proof = get_fetched_note_proof(rpc_api, note_id.clone())
         .await?;
 
     match proof {
@@ -24,11 +27,11 @@ pub async fn check_note_existence<AUTH: TransactionAuthenticator + Sync + 'stati
     }
 }
 
-pub async fn get_fetched_note_proof<AUTH: TransactionAuthenticator + Sync + 'static>(
-    client: &mut Client<AUTH>,
+pub async fn get_fetched_note_proof(
+    rpc_api: Arc<dyn NodeRpcClient>,
     note_id: NoteId,
 ) -> Result<Option<NoteInclusionProof>, ClientError> {
-    let result = client.rpc_api.get_note_by_id(note_id).await;
+    let result = rpc_api.get_note_by_id(note_id).await;
     
     let note = match result {
         Ok(fetched_note) => Ok(Some(fetched_note)),
@@ -37,7 +40,7 @@ pub async fn get_fetched_note_proof<AUTH: TransactionAuthenticator + Sync + 'sta
     };
 
     match note {
-        Ok(note) => {},
+        Ok(Some(note)) => Ok(Some(note.inclusion_proof().clone())),
         Ok(None) => Ok(None),
         Err(err) => return Err(ClientError::RpcError(err)),
     }
