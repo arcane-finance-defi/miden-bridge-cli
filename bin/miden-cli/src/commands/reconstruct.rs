@@ -1,26 +1,38 @@
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
+use std::sync::Arc;
+
 use clap::{Parser, ValueEnum};
+use miden_client::Client;
+use miden_client::auth::TransactionAuthenticator;
+use miden_client::rpc::NodeRpcClient;
 use miden_lib::note::utils::build_p2id_recipient;
 use miden_objects::asset::FungibleAsset;
+use miden_objects::note::{
+    Note,
+    NoteAssets,
+    NoteDetails,
+    NoteExecutionHint,
+    NoteFile,
+    NoteMetadata,
+    NoteType,
+};
+use miden_objects::utils::{Serializable, parse_hex_string_as_word};
 use miden_objects::{Felt, FieldElement};
-use miden_objects::note::{Note, NoteAssets, NoteDetails, NoteExecutionHint, NoteFile, NoteMetadata, NoteType};
-use miden_objects::utils::{parse_hex_string_as_word, Serializable};
 use tracing::{info, warn};
-use miden_client::Client;
+
 use crate::crosschain::reconstruct_crosschain_note;
 use crate::errors::CliError;
-use crate::notes::check_note_existence;
+use crate::notes::{check_note_existence, get_fetched_note_proof};
 use crate::utils::{bridge_note_tag, parse_account_id};
 // RECONSTRUCT COMMAND
 // ================================================================================================
 
-
 #[derive(ValueEnum, Debug, Clone)]
 enum ReconstructType {
     P2ID,
-    CROSSCHAIN
+    CROSSCHAIN,
 }
 
 impl Default for ReconstructType {
@@ -67,12 +79,16 @@ pub struct ReconstructCmd {
     export: Option<bool>,
 
     /// Desired filename for the binary file. Defaults to the note ID if not provided.
-    #[arg(short, long)]
+    #[arg(short = 'F', long)]
     filename: Option<PathBuf>,
 }
 
 impl ReconstructCmd {
-    pub async fn execute(&self, client: &mut Client) -> Result<(), CliError> {
+    pub async fn execute<AUTH: TransactionAuthenticator + Sync + 'static>(
+        &self,
+        client: &mut Client<AUTH>,
+        rpc_api: Arc<dyn NodeRpcClient>,
+    ) -> Result<(), CliError> {
         client.sync_state().await?;
         let (note_text, note_id) = match self {
             Self {
@@ -88,15 +104,16 @@ impl ReconstructCmd {
                 let serial_number = parse_hex_string_as_word(serial_number)
                     .map_err(|_| CliError::InvalidArgument("serial-number".to_string()))?;
 
-                let recipient = build_p2id_recipient(receiver, serial_number.clone())
+                let recipient = build_p2id_recipient(receiver, serial_number.into())
                     .map_err(|e| CliError::Internal(Box::new(e)))?;
 
                 let note_details = NoteDetails::new(
                     NoteAssets::new(vec![
-                        FungibleAsset::new(
-                            faucet_id, *asset_amount
-                        ).map_err(|e| CliError::Internal(Box::new(e)))?.into()
-                    ]).map_err(|e| CliError::Internal(Box::new(e)))?,
+                        FungibleAsset::new(faucet_id, *asset_amount)
+                            .map_err(|e| CliError::Internal(Box::new(e)))?
+                            .into(),
+                    ])
+                    .map_err(|e| CliError::Internal(Box::new(e)))?,
                     recipient,
                 );
 
@@ -107,12 +124,15 @@ impl ReconstructCmd {
                 let note_id_hex = note_id.to_hex();
                 println!("Reconstructed note id: {note_id_hex}");
 
-                Ok((NoteFile::NoteDetails {
-                    details: note_details,
-                    after_block_num: 0.into(),
-                    tag: Some(note_tag)
-                }, note_id))
-            }
+                Ok((
+                    NoteFile::NoteDetails {
+                        details: note_details,
+                        after_block_num: 0.into(),
+                        tag: Some(note_tag),
+                    },
+                    note_id,
+                ))
+            },
             Self {
                 note_type: ReconstructType::CROSSCHAIN,
                 serial_number,
@@ -122,51 +142,55 @@ impl ReconstructCmd {
                 faucet_id: Some(faucet_id),
                 asset_amount: Some(asset_amount),
                 ..
-            } => {
-                reconstruct_crosschain_note(
-                    serial_number,
-                    bridge_serial_number,
-                    dest_chain,
-                    dest_address,
-                    faucet_id,
-                    asset_amount,
-                ).await.map_err(|e| CliError::Internal(Box::new(e)))
-            },
-            _ => Err(CliError::Input("Wrong arguments set".to_string()))
+            } => reconstruct_crosschain_note(
+                serial_number,
+                bridge_serial_number,
+                dest_chain,
+                dest_address,
+                faucet_id,
+                asset_amount,
+            )
+            .await
+            .map_err(|e| CliError::Internal(Box::new(e))),
+            _ => Err(CliError::Input("Wrong arguments set".to_string())),
         }?;
 
-        if check_note_existence(client, &note_id).await
-            .map_err(|e| CliError::Internal(Box::new(e)))? {
-
-
+        if check_note_existence(client, rpc_api.clone(), &note_id)
+            .await
+            .map_err(|e| CliError::Internal(Box::new(e)))?
+        {
             if let Some(true) = self.export {
                 let (note_details, tag) = match note_text {
                     NoteFile::NoteDetails { details, tag: Some(tag), .. } => (details, tag),
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 };
 
-                let proof = client.get_note_inclusion_proof(note_id).await?.unwrap();
+                let proof = get_fetched_note_proof(rpc_api.clone(), note_id)
+                    .await?
+                    .expect("note proof from RPC");
 
                 let note_text = NoteFile::NoteWithProof(
                     Note::new(
                         note_details.assets().clone(),
                         NoteMetadata::new(
-                            parse_account_id(client, self.faucet_id.clone().unwrap().as_str()).await?,
+                            parse_account_id(client, self.faucet_id.clone().unwrap().as_str())
+                                .await?,
                             NoteType::Private,
                             tag,
                             NoteExecutionHint::Always,
-                            Felt::ZERO
-                        ).map_err(|err| CliError::Internal(Box::new(err)))?,
-                        note_details.recipient().clone()
+                            Felt::ZERO,
+                        )
+                        .map_err(|err| CliError::Internal(Box::new(err)))?,
+                        note_details.recipient().clone(),
                     ),
-                    proof
+                    proof,
                 );
 
                 let file_path = if let Some(filename) = &self.filename {
                     filename.clone()
                 } else {
                     let current_dir = std::env::current_dir()?;
-                    current_dir.join(format!("{}.mno", note_id.inner()))
+                    current_dir.join(format!("{}.mno", note_id))
                 };
 
                 info!("Writing file to {}", file_path.to_string_lossy());
@@ -174,9 +198,10 @@ impl ReconstructCmd {
                 file.write_all(&note_text.to_bytes()).map_err(CliError::IO)?;
 
                 println!("Successfully exported note {note_id}");
-
             } else {
-                client.import_note(note_text).await
+                client
+                    .import_note(note_text)
+                    .await
                     .map_err(|e| CliError::Internal(Box::new(e)))?;
 
                 info!("Note {} successfully imported", note_id.to_hex());

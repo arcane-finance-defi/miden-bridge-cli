@@ -1,18 +1,14 @@
-use std::{
-    fs::{self, File},
-    io::Write,
-    path::PathBuf,
-};
+use std::fs::{self, File};
+use std::io::Write;
+use std::path::PathBuf;
 
 use clap::Parser;
+use miden_client::consts::MIXER_DEFAULT_URL;
 use tracing::info;
 
-use crate::{
-    CLIENT_CONFIG_FILE_NAME,
-    config::{CliConfig, CliEndpoint, Network},
-    errors::CliError,
-};
-use miden_client::consts::MIXER_DEFAULT_URL;
+use crate::CLIENT_CONFIG_FILE_NAME;
+use crate::config::{CliConfig, CliEndpoint, Network};
+use crate::errors::CliError;
 
 /// Contains the account component template file generated on build.rs, corresponding to the basic
 /// wallet component.
@@ -40,7 +36,7 @@ directory"
 )]
 pub struct InitCmd {
     /// Network configuration to use. Options are `devnet`, `testnet`, `localhost` or a custom RPC
-    /// endpoint. Defaults to the testnet network.
+    /// endpoint.
     #[clap(long, short)]
     network: Network,
 

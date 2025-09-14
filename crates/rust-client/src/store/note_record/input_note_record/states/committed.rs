@@ -1,14 +1,15 @@
 use alloc::string::ToString;
 
-use miden_objects::{
-    Digest,
-    block::BlockHeader,
-    note::{NoteId, NoteInclusionProof, NoteMetadata},
-    transaction::TransactionId,
-};
+use miden_objects::Word;
+use miden_objects::block::BlockHeader;
+use miden_objects::note::{NoteId, NoteInclusionProof, NoteMetadata};
+use miden_objects::transaction::TransactionId;
 
 use super::{
-    ConsumedExternalNoteState, InputNoteState, NoteStateHandler, NoteSubmissionData,
+    ConsumedExternalNoteState,
+    InputNoteState,
+    NoteStateHandler,
+    NoteSubmissionData,
     ProcessingAuthenticatedNoteState,
 };
 use crate::store::NoteRecordError;
@@ -22,7 +23,7 @@ pub struct CommittedNoteState {
     /// Inclusion proof for the note inside the chain block.
     pub inclusion_proof: NoteInclusionProof,
     /// Root of the note tree inside the block that verifies the note inclusion proof.
-    pub block_note_root: Digest,
+    pub block_note_root: Word,
 }
 
 impl NoteStateHandler for CommittedNoteState {
@@ -31,6 +32,11 @@ impl NoteStateHandler for CommittedNoteState {
         inclusion_proof: NoteInclusionProof,
         metadata: NoteMetadata,
     ) -> Result<Option<InputNoteState>, NoteRecordError> {
+        if self.inclusion_proof != inclusion_proof || self.metadata != metadata {
+            return Err(NoteRecordError::StateTransitionError(
+                "Inclusion proof or metadata do not match the expected values".to_string(),
+            ));
+        }
         Ok(None)
     }
 
@@ -46,6 +52,11 @@ impl NoteStateHandler for CommittedNoteState {
         _note_id: NoteId,
         block_header: &BlockHeader,
     ) -> Result<Option<InputNoteState>, NoteRecordError> {
+        if block_header.note_root() != self.block_note_root {
+            return Err(NoteRecordError::StateTransitionError(
+                "Block header does not match the expected note root".to_string(),
+            ));
+        }
         Ok(None)
     }
 
@@ -109,7 +120,7 @@ impl miden_tx::utils::Deserializable for CommittedNoteState {
     ) -> Result<Self, miden_tx::utils::DeserializationError> {
         let metadata = NoteMetadata::read_from(source)?;
         let inclusion_proof = NoteInclusionProof::read_from(source)?;
-        let block_note_root = Digest::read_from(source)?;
+        let block_note_root = Word::read_from(source)?;
         Ok(CommittedNoteState {
             metadata,
             inclusion_proof,

@@ -1,5 +1,8 @@
 use miden_client::note::{NoteScript as NativeNoteScript, WellKnownNote};
+use miden_objects::PrettyPrint;
 use wasm_bindgen::prelude::*;
+
+use super::word::Word;
 
 #[derive(Clone)]
 #[wasm_bindgen]
@@ -7,6 +10,13 @@ pub struct NoteScript(NativeNoteScript);
 
 #[wasm_bindgen]
 impl NoteScript {
+    /// Print the MAST source for this script.
+    #[wasm_bindgen(js_name = toString)]
+    #[allow(clippy::inherent_to_string)]
+    pub fn to_string(&self) -> String {
+        self.0.to_pretty_string()
+    }
+
     pub fn p2id() -> Self {
         WellKnownNote::P2ID.script().into()
     }
@@ -19,9 +29,8 @@ impl NoteScript {
         WellKnownNote::SWAP.script().into()
     }
 
-    #[wasm_bindgen(js_name = "rootHex")]
-    pub fn root_hex(&self) -> String {
-        self.0.root().to_hex()
+    pub fn root(&self) -> Word {
+        self.0.root().into()
     }
 }
 // CONVERSIONS

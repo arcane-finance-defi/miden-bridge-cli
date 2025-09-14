@@ -1,25 +1,39 @@
-import { WebClient as WasmWebClient, NoteScript } from "./crates/miden_client_web";
+import {
+  WebClient as WasmWebClient,
+  NoteScript,
+} from "./crates/miden_client_web";
 
 export {
   Account,
   AccountBuilder,
   AccountComponent,
+  AccountDelta,
   AccountHeader,
   AccountId,
+  AccountInterface,
+  AccountStorageDelta,
   AccountStorageMode,
   AccountStorageRequirements,
   AccountType,
+  AccountVaultDelta,
+  Address,
+  AddressInterface,
   AdviceMap,
   Assembler,
   AssemblerUtils,
   AuthSecretKey,
+  BasicFungibleFaucetComponent,
   ConsumableNoteRecord,
+  Endpoint,
   Felt,
   FeltArray,
   ForeignAccount,
   FungibleAsset,
+  FungibleAssetDelta,
+  InputNoteRecord,
   InputNoteState,
   Library,
+  NetworkId,
   NewSwapTransactionResult,
   Note,
   NoteAndArgs,
@@ -42,15 +56,17 @@ export {
   OutputNote,
   OutputNotesArray,
   PublicKey,
-  RpoDigest,
   Rpo256,
+  RpcClient,
   SecretKey,
   SerializedAccountHeader,
+  SigningInputs,
   SlotAndKeys,
   SlotAndKeysArray,
   StorageMap,
   StorageSlot,
   TestUtils,
+  TokenSymbol,
   TransactionFilter,
   TransactionKernel,
   TransactionProver,
@@ -61,7 +77,6 @@ export {
   TransactionScriptInputPair,
   TransactionScriptInputPairArray,
   Word,
-  WebClient,
 } from "./crates/miden_client_web";
 
 // Extend WASM WebClient but override methods that use workers
@@ -73,7 +88,10 @@ export declare class WebClient extends WasmWebClient {
    * @param seed - The seed for the account (optional).
    * @returns A promise that resolves to a fully initialized WebClient.
    */
-  static createClient(rpcUrl?: string, seed?: string): Promise<WebClient>;
+  static createClient(
+    rpcUrl?: string,
+    seed?: string
+  ): Promise<WebClient & WasmWebClient>;
 
   /**
    * Terminates the underlying worker.

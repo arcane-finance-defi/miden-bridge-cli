@@ -1,24 +1,35 @@
-import wasm from "../dist/wasm.js";
+import loadWasm from "../dist/wasm.js";
+const wasm = await loadWasm();
 import { MethodName, WorkerAction } from "./constants.js";
 
 const {
   Account,
   AccountBuilder,
   AccountComponent,
+  AccountDelta,
   AccountHeader,
   AccountId,
+  AccountInterface,
+  AccountStorageDelta,
   AccountStorageMode,
   AccountStorageRequirements,
   AccountType,
+  AccountVaultDelta,
+  Address,
+  AddressInterface,
   AdviceMap,
   Assembler,
   AssemblerUtils,
   AuthSecretKey,
+  BasicFungibleFaucetComponent,
   ConsumableNoteRecord,
+  Endpoint,
   Felt,
   FeltArray,
   ForeignAccount,
   FungibleAsset,
+  FungibleAssetDelta,
+  InputNoteRecord,
   InputNoteState,
   Library,
   Note,
@@ -38,18 +49,22 @@ const {
   NoteRecipient,
   NoteScript,
   NoteTag,
+  NetworkId,
   NoteType,
   OutputNote,
   OutputNotesArray,
   PublicKey,
-  RpoDigest,
   Rpo256,
+  RpcClient,
   SecretKey,
+  Signature,
+  SigningInputs,
   SlotAndKeys,
   SlotAndKeysArray,
   StorageMap,
   StorageSlot,
   TestUtils,
+  TokenSymbol,
   TransactionFilter,
   TransactionKernel,
   TransactionProver,
@@ -68,22 +83,33 @@ export {
   Account,
   AccountBuilder,
   AccountComponent,
+  AccountDelta,
+  AccountVaultDelta,
   AccountHeader,
   AccountId,
+  AccountInterface,
+  AccountStorageDelta,
   AccountStorageMode,
   AccountStorageRequirements,
   AccountType,
+  Address,
+  AddressInterface,
   AdviceMap,
   Assembler,
   AssemblerUtils,
   AuthSecretKey,
+  BasicFungibleFaucetComponent,
   ConsumableNoteRecord,
+  Endpoint,
   Felt,
   FeltArray,
   ForeignAccount,
   FungibleAsset,
+  FungibleAssetDelta,
+  InputNoteRecord,
   InputNoteState,
   Library,
+  NetworkId,
   Note,
   NoteAndArgs,
   NoteAndArgsArray,
@@ -105,14 +131,17 @@ export {
   OutputNote,
   OutputNotesArray,
   PublicKey,
-  RpoDigest,
   Rpo256,
+  RpcClient,
   SecretKey,
+  Signature,
+  SigningInputs,
   SlotAndKeys,
   SlotAndKeysArray,
   StorageMap,
   StorageSlot,
   TestUtils,
+  TokenSymbol,
   TransactionFilter,
   TransactionKernel,
   TransactionProver,
@@ -123,7 +152,7 @@ export {
   TransactionScriptInputPair,
   TransactionScriptInputPairArray,
   Word,
-  readNoteScriptFromBytes
+  readNoteScriptFromBytes,
 };
 
 /**
@@ -380,6 +409,8 @@ export class WebClient {
       // If a prover is provided, serialize it and add it to the args.
       if (prover) {
         args.push(prover.serialize());
+      } else {
+        args.push(null);
       }
 
       // Always call the same worker method.
@@ -395,9 +426,11 @@ export class WebClient {
       if (!this.worker) {
         return await this.wasmWebClient.syncState();
       }
+
       const serializedSyncSummaryBytes = await this.callMethodWithWorker(
         MethodName.SYNC_STATE
       );
+
       return wasm.SyncSummary.deserialize(
         new Uint8Array(serializedSyncSummaryBytes)
       );
@@ -422,3 +455,104 @@ Object.getOwnPropertyNames(WasmWebClient).forEach((prop) => {
     WebClient[prop] = WasmWebClient[prop];
   }
 });
+
+export class MockWebClient extends WebClient {
+  constructor(seed) {
+    super(null, seed);
+  }
+
+  /**
+   * Factory method to create a WebClient with a mock chain for testing purposes.
+   *
+   * @param serializedMockChain - Serialized mock chain data (optional). Will use an empty chain if not provided.
+   * @param seed - The seed for the account (optional).
+   * @returns A promise that resolves to a MockWebClient.
+   */
+  static async createClient(serializedMockChain, seed) {
+    // Construct the instance (synchronously).
+    const instance = new MockWebClient(seed);
+
+    // Wait for the underlying wasmWebClient to be initialized.
+    await instance.wasmWebClient.createMockClient(seed, serializedMockChain);
+
+    // Wait for the worker to be ready
+    await instance.ready;
+
+    // Return a proxy that forwards missing properties to wasmWebClient.
+    return new Proxy(instance, {
+      get(target, prop, receiver) {
+        // If the property exists on the wrapper, return it.
+        if (prop in target) {
+          return Reflect.get(target, prop, receiver);
+        }
+        // Otherwise, if the wasmWebClient has it, return that.
+        if (target.wasmWebClient && prop in target.wasmWebClient) {
+          const value = target.wasmWebClient[prop];
+          if (typeof value === "function") {
+            return value.bind(target.wasmWebClient);
+          }
+          return value;
+        }
+        return undefined;
+      },
+    });
+  }
+
+  async syncState() {
+    try {
+      if (!this.worker) {
+        return await this.wasmWebClient.syncState();
+      }
+
+      let serializedMockChain = this.wasmWebClient.serializeMockChain().buffer;
+
+      const serializedSyncSummaryBytes = await this.callMethodWithWorker(
+        MethodName.SYNC_STATE_MOCK,
+        serializedMockChain
+      );
+
+      return wasm.SyncSummary.deserialize(
+        new Uint8Array(serializedSyncSummaryBytes)
+      );
+    } catch (error) {
+      console.error("INDEX.JS: Error in syncState:", error.toString());
+      throw error;
+    }
+  }
+
+  async submitTransaction(transactionResult, prover = undefined) {
+    try {
+      if (!this.worker) {
+        return await this.wasmWebClient.submitTransaction(
+          transactionResult,
+          prover
+        );
+      }
+      const serializedTransactionResult = transactionResult.serialize();
+      const args = [serializedTransactionResult];
+
+      // If a prover is provided, serialize it and add it to the args.
+      if (prover) {
+        args.push(prover.serialize());
+      } else {
+        args.push(null);
+      }
+
+      args.push(this.wasmWebClient.serializeMockChain().buffer);
+
+      // Always call the same worker method.
+      let serializedMockChain = await this.callMethodWithWorker(
+        MethodName.SUBMIT_TRANSACTION_MOCK,
+        ...args
+      );
+
+      serializedMockChain = new Uint8Array(serializedMockChain);
+
+      this.wasmWebClient = new WasmWebClient();
+      await this.wasmWebClient.createMockClient(this.seed, serializedMockChain);
+    } catch (error) {
+      console.error("INDEX.JS: Error in submitTransaction:", error.toString());
+      throw error;
+    }
+  }
+}

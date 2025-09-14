@@ -2,7 +2,7 @@
 authors.workspace      = true
 categories             = ["command-line-utilities"]
 description            = "The official command line client for interacting with the Miden rollup"
-documentation          = "https://docs.rs/miden-client-cli/0.10.0"
+documentation          = "https://docs.rs/miden-client-cli/0.11.3"
 edition.workspace      = true
 keywords               = ["cli", "client", "miden"]
 license.workspace      = true
@@ -10,10 +10,10 @@ name                   = "miden-client-cli"
 readme                 = "README.md"
 repository.workspace   = true
 rust-version.workspace = true
-version                = "0.10.0"
+version.workspace      = true
 
 [[bin]]
-name = "miden-bridge"
+name = "miden-bridge-cli"
 path = "src/main.rs"
 
 [features]
@@ -21,34 +21,37 @@ default = []
 
 [dependencies]
 # Workspace dependencies
-miden-client = { features = ["sqlite", "tonic"], path = "../../crates/rust-client", version = "0.10" }
+miden-client = { features = ["sqlite", "tonic"], path = "../../crates/rust-client", version = "0.11" }
 
 # Miden dependencies
-miden-lib     = { workspace = true }
-miden-bridge = { git = "https://github.com/arcane-finance-defi/miden-bridge-mono.git", version = "0.1.0", features = ["std", "async"] }
+miden-bridge = { branch = "main", features = [
+  "std",
+], git = "https://github.com/arcane-finance-defi/miden-bridge-mono.git" }
+miden-lib = { workspace = true }
 miden-objects = { workspace = true }
 
 # External dependencies
-alloy-primitives = "1.0.0"
+alloy-primitives   = "1.0.0"
 clap               = { features = ["derive"], version = "4.5" }
 comfy-table        = { version = "7.1" }
 figment            = { features = ["env", "toml"], version = "0.10" }
 miette             = { workspace = true }
 rand               = { workspace = true }
+reqwest            = { features = ["json", "rustls-tls"], version = "0.12" }
 serde              = { features = ["derive"], version = "1.0" }
 thiserror          = { workspace = true }
 tokio              = { workspace = true }
 toml               = { version = "0.8" }
 tracing            = { workspace = true }
 tracing-subscriber = { version = "0.3" }
-reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 
 [build-dependencies]
-miden-client  = { path = "../../crates/rust-client", version = "0.10" }
+miden-client  = { path = "../../crates/rust-client", version = "0.11" }
 miden-lib     = { workspace = true }
 miden-objects = { workspace = true }
 
 [dev-dependencies]
+anyhow     = { workspace = true }
 assert_cmd = { version = "2.0" }
 predicates = { version = "3.0" }
 uuid       = { features = ["serde", "v4"], version = "1.10" }
