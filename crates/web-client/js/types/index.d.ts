@@ -1,4 +1,7 @@
-import { WebClient as WasmWebClient, NoteScript } from "./crates/miden_client_web";
+import {
+  WebClient as WasmWebClient,
+  NoteScript,
+} from "./crates/miden_client_web";
 
 export {
   Account,

@@ -101,7 +101,7 @@
 //!     .unwrap(),
 //!     tx_graceful_blocks,
 //!     max_block_number_delta,
-//!	    "http://localhost:8001".to_string(),
+//!     "http://localhost:8001".to_string(),
 //! )
 //! .await
 //! .unwrap();
@@ -117,7 +117,7 @@
 
 #[macro_use]
 extern crate alloc;
-use alloc::{boxed::Box, string::String};
+use alloc::boxed::Box;
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -140,8 +140,8 @@ mod test_utils;
 #[cfg(test)]
 pub mod tests;
 
-mod errors;
 pub mod consts;
+mod errors;
 // RE-EXPORTS
 // ================================================================================================
 
@@ -270,8 +270,6 @@ pub struct Client<AUTH> {
     /// Maximum number of blocks the client can be behind the network for transactions and account
     /// proofs to be considered valid.
     max_block_number_delta: Option<u32>,
-    /// Mixer operator url
-    mixer_url: alloc::string::String
 }
 
 /// Construction and access methods.
@@ -312,7 +310,6 @@ where
         exec_options: ExecutionOptions,
         tx_graceful_blocks: Option<u32>,
         max_block_number_delta: Option<u32>,
-	mixer_url: alloc::string::String
     ) -> Result<Self, ClientError> {
         let tx_prover = Arc::new(LocalTransactionProver::default());
 
@@ -330,7 +327,6 @@ where
             exec_options,
             tx_graceful_blocks,
             max_block_number_delta,
-            mixer_url
         })
     }
 
@@ -361,10 +357,6 @@ where
     #[cfg(any(test, feature = "testing"))]
     pub fn test_store(&mut self) -> &mut Arc<dyn Store> {
         &mut self.store
-    }
-
-    pub fn mixer_url(&self) -> alloc::string::String {
-        self.mixer_url.clone()
     }
 }
 

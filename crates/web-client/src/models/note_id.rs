@@ -1,7 +1,8 @@
 use miden_objects::note::NoteId as NativeNoteId;
 use wasm_bindgen::prelude::*;
-use crate::js_error_with_context;
+
 use super::rpo_digest::RpoDigest;
+use crate::js_error_with_context;
 
 #[derive(Clone, Copy)]
 #[wasm_bindgen]

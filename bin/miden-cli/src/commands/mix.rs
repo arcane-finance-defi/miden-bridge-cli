@@ -1,30 +1,24 @@
 use std::sync::Arc;
+
 use clap::Parser;
-use miden_client::rpc::NodeRpcClient;
-use miden_objects::FieldElement;
-use miden_objects::note::{Note, NoteExecutionHint, NoteFile, NoteMetadata, NoteTag, NoteType};
-use miden_objects::utils::{Serializable, ToHex};
-use miden_client::{Client, Felt};
+use miden_client::Client;
 use miden_client::auth::TransactionAuthenticator;
-use miden_client::store::{NoteExportType, NoteFilter};
-use crate::crosschain::reconstruct_crosschain_note;
-use crate::errors::CliError;
+use miden_client::rpc::NodeRpcClient;
+use miden_objects::utils::ToHex;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
+
 use crate::config::CliEndpoint;
-use crate::errors::CliError::AccountId;
+use crate::crosschain::reconstruct_crosschain_note;
+use crate::errors::CliError;
 use crate::notes::check_note_existence;
-use crate::utils::bridge_note_tag;
 // MIX COMMAND
 // ================================================================================================
-
-
 
 /// Reconstructs the CROSSCHAIN note and pass it to the mixer operator
 #[derive(Default, Debug, Clone, Parser)]
 #[allow(clippy::option_option)]
 pub struct MixCmd {
-
     #[clap(long)]
     dest_chain: u32,
 
@@ -45,9 +39,8 @@ pub struct MixCmd {
 
     /// CROSSCHAIN asset amount
     #[clap(short, long)]
-    asset_amount: u64
+    asset_amount: u64,
 }
-
 
 #[derive(Debug, Deserialize, Serialize)]
 struct MixRequest {
@@ -65,8 +58,12 @@ struct MixResponse {
 }
 
 impl MixCmd {
-    pub async fn execute<AUTH: TransactionAuthenticator + Sync + 'static>
-    (&self, client: &mut Client<AUTH>, rpc_api: Arc<dyn NodeRpcClient>, mixer_url: CliEndpoint) -> Result<(), CliError> {
+    pub async fn execute<AUTH: TransactionAuthenticator + Sync + 'static>(
+        &self,
+        client: &mut Client<AUTH>,
+        rpc_api: Arc<dyn NodeRpcClient>,
+        mixer_url: CliEndpoint,
+    ) -> Result<(), CliError> {
         client.sync_state().await?;
         let (_, note_id) = reconstruct_crosschain_note(
             &self.serial_number,
@@ -74,14 +71,18 @@ impl MixCmd {
             &self.dest_chain,
             &self.dest_address,
             &self.faucet_id,
-            &self.asset_amount
-        ).await.map_err(|e| CliError::Internal(Box::new(e)))?;
+            &self.asset_amount,
+        )
+        .await
+        .map_err(|e| CliError::Internal(Box::new(e)))?;
 
         let note_id_hex = note_id.to_hex();
         info!("Reconstructed note id: {note_id_hex}");
-        
-        if check_note_existence(client, rpc_api, &note_id).await
-            .map_err(|e| CliError::Internal(Box::new(e)))? {
+
+        if check_note_existence(client, rpc_api, &note_id)
+            .await
+            .map_err(|e| CliError::Internal(Box::new(e)))?
+        {
             debug!("Sending note: {note_id_hex} to mixer operator");
 
             let request = MixRequest {
@@ -97,15 +98,19 @@ impl MixCmd {
                 .post(format!("{}/api/v1/mix", mixer_url.to_string()))
                 .json(&request)
                 .send()
-                .await.map_err(|e| CliError::Internal(Box::new(e)))?
+                .await
+                .map_err(|e| CliError::Internal(Box::new(e)))?
                 .json::<MixResponse>()
-                .await.map_err(|e| CliError::Internal(Box::new(e)))?;
+                .await
+                .map_err(|e| CliError::Internal(Box::new(e)))?;
 
             println!("Generated tx id: {}", response.tx_id);
 
             Ok(())
         } else {
-            Err(CliError::InvalidArgument(format!("Couldn't find a note {} onchain. Try later.", note_id_hex).to_string()))
+            Err(CliError::InvalidArgument(
+                format!("Couldn't find a note {} onchain. Try later.", note_id_hex).to_string(),
+            ))
         }
     }
 }

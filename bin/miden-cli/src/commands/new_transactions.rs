@@ -26,6 +26,7 @@ use tracing::info;
 
 use crate::create_dynamic_table;
 use crate::errors::CliError;
+use crate::public_notes::{get_public_bridge_output_note, is_crosschain_note};
 use crate::utils::{
     SHARED_TOKEN_DOCUMENTATION,
     get_input_acc_id_by_prefix_or_default,
@@ -33,7 +34,6 @@ use crate::utils::{
     load_faucet_details_map,
     parse_account_id,
 };
-use crate::public_notes::{get_public_bridge_output_note, is_crosschain_note};
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum NoteType {
@@ -323,7 +323,7 @@ impl ConsumeNotesCmd {
             if is_crosschain_note(note_record.clone()) {
                 output_notes.push(
                     get_public_bridge_output_note(note_record.clone())
-                        .map_err(|e| CliError::Internal(Box::new(e)))?
+                        .map_err(|e| CliError::Internal(Box::new(e)))?,
                 );
             }
 

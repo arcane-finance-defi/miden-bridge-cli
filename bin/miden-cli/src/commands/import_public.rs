@@ -1,22 +1,11 @@
-use std::{
-    fs::{self, File},
-    io::Read,
-    path::PathBuf,
-};
-
-use miden_client::{
-    Client, ClientError,
-    account::{AccountFile, AccountId},
-    note::NoteFile,
-    utils::Deserializable,
-};
+use miden_client::account::{AccountFile, AccountId};
 use miden_client::auth::TransactionAuthenticator;
-use tracing::info;
 use miden_client::keystore::KeyStoreError;
-use crate::{
-    CliKeyStore, Parser, commands::account::maybe_set_default_account, errors::CliError,
-    utils::load_config_file,
-};
+use miden_client::utils::Deserializable;
+use miden_client::{Client, ClientError};
+
+use crate::errors::CliError;
+use crate::{CliKeyStore, Parser};
 
 #[derive(Debug, Parser, Clone)]
 #[clap(about = "Import public accounts")]
@@ -27,8 +16,11 @@ pub struct ImportPublicCmd {
 }
 
 impl ImportPublicCmd {
-    pub async fn execute<AUTH: TransactionAuthenticator + Sync>
-    (&self, mut client: Client<AUTH>, keystore: CliKeyStore) -> Result<(), CliError> {
+    pub async fn execute<AUTH: TransactionAuthenticator + Sync>(
+        &self,
+        mut client: Client<AUTH>,
+        keystore: CliKeyStore,
+    ) -> Result<(), CliError> {
         let account_id = AccountId::from_hex(self.account_id.as_str())
             .map_err(|e| CliError::AccountId(e, "Malformed Account id hex".to_string()))?;
 
@@ -54,9 +46,12 @@ async fn import_account<AUTH: TransactionAuthenticator + Sync>(
         .map_err(ClientError::DataDeserializationError)?;
     let account_id = account_data.account.id();
 
-    account_data.auth_secret_keys.iter().map(
-        |key| keystore.add_key(key)
-    ).collect::<Result<Vec<()>, KeyStoreError>>().map_err(CliError::KeyStore)?;
+    account_data
+        .auth_secret_keys
+        .iter()
+        .map(|key| keystore.add_key(key))
+        .collect::<Result<Vec<()>, KeyStoreError>>()
+        .map_err(CliError::KeyStore)?;
 
     client
         .add_account(&account_data.account, account_data.account_seed, overwrite)

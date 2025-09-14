@@ -152,7 +152,7 @@ export {
   TransactionScriptInputPair,
   TransactionScriptInputPairArray,
   Word,
-  readNoteScriptFromBytes
+  readNoteScriptFromBytes,
 };
 
 /**

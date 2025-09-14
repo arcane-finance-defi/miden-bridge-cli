@@ -4,16 +4,17 @@ use std::path::{Path, PathBuf};
 
 use figment::Figment;
 use figment::providers::{Format, Toml};
+use miden_bridge::notes::BRIDGE_USECASE;
 use miden_client::Client;
 use miden_client::account::AccountId;
+use miden_client::note::NoteTag;
 use miden_objects::address::Address;
 use tracing::info;
-use miden_client::utils::DeserializationError;
-use super::{CLIENT_CONFIG_FILE_NAME, config::CliConfig, get_account_with_id_prefix};
-use crate::{errors::CliError, faucet_details_map::FaucetDetailsMap};
 
-use miden_client::note::NoteTag;
-use miden_bridge::notes::BRIDGE_USECASE;
+use super::config::CliConfig;
+use super::{CLIENT_CONFIG_FILE_NAME, get_account_with_id_prefix};
+use crate::errors::CliError;
+use crate::faucet_details_map::FaucetDetailsMap;
 
 pub(crate) fn bridge_note_tag() -> NoteTag {
     NoteTag::for_local_use_case(BRIDGE_USECASE, 0).unwrap()
@@ -123,4 +124,3 @@ pub fn load_faucet_details_map() -> Result<FaucetDetailsMap, CliError> {
     let (config, _) = load_config_file()?;
     FaucetDetailsMap::new(config.token_symbol_map_filepath)
 }
-

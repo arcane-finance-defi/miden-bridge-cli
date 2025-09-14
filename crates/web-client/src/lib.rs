@@ -2,6 +2,7 @@ extern crate alloc;
 use alloc::sync::Arc;
 use std::fmt::Write;
 
+use miden_client::consts::MIXER_DEFAULT_URL;
 use miden_client::keystore::WebKeyStore;
 use miden_client::rpc::{Endpoint, NodeRpcClient, TonicRpcClient};
 use miden_client::store::web_store::WebStore;
@@ -12,7 +13,6 @@ use miden_objects::{Felt, MAX_TX_EXECUTION_CYCLES, MIN_TX_EXECUTION_CYCLES};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use wasm_bindgen::prelude::*;
-use miden_client::consts::MIXER_DEFAULT_URL;
 
 pub mod account;
 pub mod export;

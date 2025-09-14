@@ -9,9 +9,9 @@ use miden_client::account::AccountHeader;
 use miden_client::auth::TransactionAuthenticator;
 use miden_client::builder::ClientBuilder;
 use miden_client::keystore::FilesystemKeyStore;
+use miden_client::rpc::TonicRpcClient;
 use miden_client::store::{NoteFilter as ClientNoteFilter, OutputNoteRecord};
 use miden_client::{Client, DebugMode, IdPrefixFetchError};
-use miden_client::rpc::TonicRpcClient;
 use rand::rngs::StdRng;
 mod commands;
 use commands::account::AccountCmd;
@@ -19,30 +19,30 @@ use commands::crosschain::CrosschainCmd;
 use commands::exec::ExecCmd;
 use commands::export::ExportCmd;
 use commands::import::ImportCmd;
+use commands::import_public::ImportPublicCmd;
 use commands::init::InitCmd;
 use commands::mix::MixCmd;
 use commands::new_account::{NewAccountCmd, NewWalletCmd};
 use commands::new_transactions::{ConsumeNotesCmd, MintCmd, SendCmd, SwapCmd};
 use commands::notes::NotesCmd;
-use commands::import_public::ImportPublicCmd;
 use commands::recipient::RecipientCmd;
 use commands::reconstruct::ReconstructCmd;
 use commands::sync::SyncCmd;
 use commands::tags::TagsCmd;
 use commands::transactions::TransactionCmd;
-use crate::utils::bridge_note_tag;
+
 use self::utils::load_config_file;
 
 pub type CliKeyStore = FilesystemKeyStore<StdRng>;
 
 mod config;
+mod crosschain;
 mod errors;
 mod faucet_details_map;
 mod info;
-mod utils;
-mod public_notes;
-mod crosschain;
 mod notes;
+mod public_notes;
+mod utils;
 
 /// Config file name.
 const CLIENT_CONFIG_FILE_NAME: &str = "miden-client.toml";
@@ -203,12 +203,10 @@ impl Cli {
 
         client.ensure_genesis_in_place().await?;
 
-        let rpc_api = Arc::new(
-            TonicRpcClient::new(
-                &cli_config.rpc.endpoint.clone().into(),
-                cli_config.rpc.timeout_ms
-            )
-        );
+        let rpc_api = Arc::new(TonicRpcClient::new(
+            &cli_config.rpc.endpoint.clone().into(),
+            cli_config.rpc.timeout_ms,
+        ));
 
         // Execute CLI command
         match &self.action {
