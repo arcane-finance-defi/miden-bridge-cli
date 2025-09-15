@@ -1,12 +1,13 @@
-use miden_lib::note::utils::build_p2id_recipient;
-use miden_objects::crypto::utils::word_to_hex;
-use miden_client::Client;
-use miden_client::crypto::FeltRng;
-use crate::errors::CliError;
-use crate::crosschain::build_crosschain_recipient;
 use clap::{Parser, ValueEnum};
 use miden_bridge::utils::evm_address_to_felts;
+use miden_client::Client;
 use miden_client::auth::TransactionAuthenticator;
+use miden_client::crypto::FeltRng;
+use miden_lib::note::utils::build_p2id_recipient;
+use miden_objects::crypto::utils::word_to_hex;
+
+use crate::crosschain::build_crosschain_recipient;
+use crate::errors::CliError;
 use crate::utils::parse_account_id;
 // RECIPIENT COMMAND
 // ================================================================================================
@@ -14,7 +15,7 @@ use crate::utils::parse_account_id;
 #[derive(ValueEnum, Debug, Clone)]
 enum RecipientType {
     P2ID,
-    CROSSCHAIN
+    CROSSCHAIN,
 }
 
 impl Default for RecipientType {
@@ -42,11 +43,14 @@ pub struct RecipientCmd {
 }
 
 impl RecipientCmd {
-    pub async fn execute<AUTH: TransactionAuthenticator>(&self, mut client: Client<AUTH>) -> Result<(), CliError> {
+    pub async fn execute<AUTH: TransactionAuthenticator>(
+        &self,
+        mut client: Client<AUTH>,
+    ) -> Result<(), CliError> {
         let rng = client.rng();
         let serial_number = rng.draw_word();
-        let serial_number_hex = word_to_hex(&serial_number)
-            .map_err(|e| CliError::Internal(Box::new(e)))?;
+        let serial_number_hex =
+            word_to_hex(&serial_number).map_err(|e| CliError::Internal(Box::new(e)))?;
 
         let recipient_digest = match &self {
             Self {
@@ -79,15 +83,14 @@ impl RecipientCmd {
                     bridge_note_serial_number,
                     *dest_chain,
                     dest_addr,
-                    None
-                ).map_err(|e| CliError::Internal(Box::new(e)))?;
+                    None,
+                )
+                .map_err(|e| CliError::Internal(Box::new(e)))?;
 
                 println!("BRIDGE serial number: 0x{bridge_note_serial_number_hex}");
                 Ok(recipient.digest().to_hex())
             },
-            _ => {
-                Err(CliError::Input("Wrong arguments set".to_string()))
-            }
+            _ => Err(CliError::Input("Wrong arguments set".to_string())),
         }?;
 
         println!("Recipient: {recipient_digest}");

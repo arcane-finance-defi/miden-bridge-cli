@@ -402,37 +402,40 @@ impl TransactionRequestBuilder {
             }
         }
 
-        let script_template = match (self.custom_script, self.own_output_notes.is_empty(), self.empty_script) {
-            (Some(_), false, false) => {
-                return Err(TransactionRequestError::ScriptTemplateError(
-                    "Cannot set both a custom script and own output notes".to_string(),
-                ));
-            },
-            (Some(script), true, false) => {
-                if self.expiration_delta.is_some() {
+        let script_template =
+            match (self.custom_script, self.own_output_notes.is_empty(), self.empty_script) {
+                (Some(_), false, false) => {
                     return Err(TransactionRequestError::ScriptTemplateError(
-                        "Cannot set expiration delta when a custom script is set".to_string(),
+                        "Cannot set both a custom script and own output notes".to_string(),
                     ));
-                }
+                },
+                (Some(script), true, false) => {
+                    if self.expiration_delta.is_some() {
+                        return Err(TransactionRequestError::ScriptTemplateError(
+                            "Cannot set expiration delta when a custom script is set".to_string(),
+                        ));
+                    }
 
-                Some(TransactionScriptTemplate::CustomScript(script))
-            },
-            (None, false, false) => {
-                let partial_notes = self
-                    .own_output_notes
-                    .into_iter()
-                    .map(|note| match note {
-                        OutputNote::Header(_) => Err(TransactionRequestError::InvalidNoteVariant),
-                        OutputNote::Partial(note) => Ok(note),
-                        OutputNote::Full(note) => Ok(note.into()),
-                    })
-                    .collect::<Result<Vec<PartialNote>, _>>()?;
+                    Some(TransactionScriptTemplate::CustomScript(script))
+                },
+                (None, false, false) => {
+                    let partial_notes = self
+                        .own_output_notes
+                        .into_iter()
+                        .map(|note| match note {
+                            OutputNote::Header(_) => {
+                                Err(TransactionRequestError::InvalidNoteVariant)
+                            },
+                            OutputNote::Partial(note) => Ok(note),
+                            OutputNote::Full(note) => Ok(note.into()),
+                        })
+                        .collect::<Result<Vec<PartialNote>, _>>()?;
 
-                Some(TransactionScriptTemplate::SendNotes(partial_notes))
-            },
-            (None, true, false) => None,
-            (_, _, true) => Some(TransactionScriptTemplate::NoAuth)
-        };
+                    Some(TransactionScriptTemplate::SendNotes(partial_notes))
+                },
+                (None, true, false) => None,
+                (_, _, true) => Some(TransactionScriptTemplate::NoAuth),
+            };
 
         Ok(TransactionRequest {
             unauthenticated_input_notes: self.unauthenticated_input_notes,

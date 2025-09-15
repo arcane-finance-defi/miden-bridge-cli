@@ -16,34 +16,34 @@ use tracing::Level;
 
 mod commands;
 use commands::account::AccountCmd;
+use commands::crosschain::CrosschainCmd;
 use commands::exec::ExecCmd;
 use commands::export::ExportCmd;
 use commands::import::ImportCmd;
+use commands::import_public::ImportPublicCmd;
 use commands::init::InitCmd;
+use commands::mix::MixCmd;
 use commands::new_account::{NewAccountCmd, NewWalletCmd};
 use commands::new_transactions::{ConsumeNotesCmd, MintCmd, SendCmd, SwapCmd};
 use commands::notes::NotesCmd;
+use commands::recipient::RecipientCmd;
+use commands::reconstruct::ReconstructCmd;
 use commands::sync::SyncCmd;
 use commands::tags::TagsCmd;
 use commands::transactions::TransactionCmd;
-use commands::recipient::RecipientCmd;
-use commands::reconstruct::ReconstructCmd;
-use commands::crosschain::CrosschainCmd;
-use commands::import_public::ImportPublicCmd;
-use commands::mix::MixCmd;
 
 use self::utils::load_config_file;
 
 pub type CliKeyStore = FilesystemKeyStore<StdRng>;
 
 mod config;
+mod crosschain;
 mod errors;
 mod faucet_details_map;
 mod info;
-mod utils;
-mod public_notes;
-mod crosschain;
 mod notes;
+mod public_notes;
+mod utils;
 
 /// Config file name.
 const CLIENT_CONFIG_FILE_NAME: &str = "miden-client.toml";
@@ -175,10 +175,8 @@ impl Cli {
 
         let log_level = if self.debug { Level::TRACE } else { Level::INFO };
 
-        let subscriber = tracing_subscriber::FmtSubscriber::builder()
-            .with_max_level(log_level)
-            .finish();
-
+        let subscriber =
+            tracing_subscriber::FmtSubscriber::builder().with_max_level(log_level).finish();
 
         tracing::subscriber::set_global_default(subscriber)
             .expect("setting default subscriber failed");

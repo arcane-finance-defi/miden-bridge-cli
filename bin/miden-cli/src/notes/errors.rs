@@ -1,5 +1,5 @@
-use thiserror::Error;
 use miden_client::ClientError;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum NotesErrors {

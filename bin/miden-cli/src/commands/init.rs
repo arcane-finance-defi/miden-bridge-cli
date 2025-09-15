@@ -3,14 +3,12 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use clap::Parser;
+use miden_client::consts::MIXER_DEFAULT_URL;
 use tracing::info;
 
-use crate::{
-    CLIENT_CONFIG_FILE_NAME,
-    config::{CliConfig, CliEndpoint, Network},
-    errors::CliError,
-};
-use miden_client::consts::MIXER_DEFAULT_URL;
+use crate::CLIENT_CONFIG_FILE_NAME;
+use crate::config::{CliConfig, CliEndpoint, Network};
+use crate::errors::CliError;
 
 /// Contains the account component template file generated on build.rs, corresponding to the basic
 /// wallet component.

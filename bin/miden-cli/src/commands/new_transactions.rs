@@ -2,22 +2,31 @@ use std::io;
 use std::sync::Arc;
 
 use clap::{Parser, ValueEnum};
-use miden_client::{
-    Client, RemoteTransactionProver,
-    account::AccountId,
-    auth::TransactionAuthenticator,
-    asset::{FungibleAsset, NonFungibleDeltaAction},
-    note::{BlockNumber, NoteType as MidenNoteType, build_swap_tag, get_input_note_with_id_prefix},
-    store::NoteRecordError,
-    transaction::{
-        InputNote, OutputNote, PaymentNoteDescription, SwapTransactionData, TransactionRequest,
-        TransactionRequestBuilder, TransactionResult,
-    },
+use miden_client::account::AccountId;
+use miden_client::asset::{FungibleAsset, NonFungibleDeltaAction};
+use miden_client::auth::TransactionAuthenticator;
+use miden_client::note::{
+    BlockNumber,
+    NoteType as MidenNoteType,
+    build_swap_tag,
+    get_input_note_with_id_prefix,
 };
+use miden_client::store::NoteRecordError;
+use miden_client::transaction::{
+    InputNote,
+    OutputNote,
+    PaymentNoteDescription,
+    SwapTransactionData,
+    TransactionRequest,
+    TransactionRequestBuilder,
+    TransactionResult,
+};
+use miden_client::{Client, RemoteTransactionProver};
 use tracing::info;
 
 use crate::create_dynamic_table;
 use crate::errors::CliError;
+use crate::public_notes::{get_public_bridge_output_note, is_crosschain_note};
 use crate::utils::{
     SHARED_TOKEN_DOCUMENTATION,
     get_input_acc_id_by_prefix_or_default,
@@ -25,7 +34,6 @@ use crate::utils::{
     load_faucet_details_map,
     parse_account_id,
 };
-use crate::public_notes::{get_public_bridge_output_note, is_crosschain_note};
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum NoteType {
@@ -315,7 +323,7 @@ impl ConsumeNotesCmd {
             if is_crosschain_note(note_record.clone()) {
                 output_notes.push(
                     get_public_bridge_output_note(note_record.clone())
-                        .map_err(|e| CliError::Internal(Box::new(e)))?
+                        .map_err(|e| CliError::Internal(Box::new(e)))?,
                 );
             }
 

@@ -101,7 +101,7 @@
 //!     .unwrap(),
 //!     tx_graceful_blocks,
 //!     max_block_number_delta,
-//!     "http://localhost:8001".to_string()
+//!     "http://localhost:8001".to_string(),
 //! )
 //! .await
 //! .unwrap();
@@ -140,8 +140,8 @@ mod test_utils;
 #[cfg(test)]
 pub mod tests;
 
-mod errors;
 pub mod consts;
+mod errors;
 // RE-EXPORTS
 // ================================================================================================
 
@@ -228,18 +228,19 @@ pub mod testing {
 }
 
 use alloc::sync::Arc;
+
 pub use miden_lib::utils::ScriptBuilder;
 use miden_objects::block::BlockNumber;
 use miden_objects::crypto::rand::FeltRng;
 use miden_objects::note::{NoteId, NoteInclusionProof};
-use miden_tx::{
-    auth::TransactionAuthenticator, LocalTransactionProver,
-};
+use miden_tx::LocalTransactionProver;
+use miden_tx::auth::TransactionAuthenticator;
 use rand::RngCore;
 use rpc::NodeRpcClient;
 use store::Store;
-use crate::rpc::domain::note::FetchedNote;
+
 use crate::rpc::RpcError;
+use crate::rpc::domain::note::FetchedNote;
 // MIDEN CLIENT
 // ================================================================================================
 
@@ -273,7 +274,7 @@ pub struct Client<AUTH> {
     /// proofs to be considered valid.
     max_block_number_delta: Option<u32>,
     /// Mixer operator url
-    mixer_url: alloc::string::String
+    mixer_url: alloc::string::String,
 }
 
 /// Construction and access methods.
@@ -314,7 +315,7 @@ where
         exec_options: ExecutionOptions,
         tx_graceful_blocks: Option<u32>,
         max_block_number_delta: Option<u32>,
-        mixer_url: alloc::string::String
+        mixer_url: alloc::string::String,
     ) -> Result<Self, ClientError> {
         let tx_prover = Arc::new(LocalTransactionProver::default());
 
@@ -332,7 +333,7 @@ where
             exec_options,
             tx_graceful_blocks,
             max_block_number_delta,
-            mixer_url
+            mixer_url,
         })
     }
 
@@ -369,14 +370,17 @@ where
         self.mixer_url.clone()
     }
 
-    pub async fn get_note_inclusion_proof(&self, note_id: NoteId) -> Result<Option<NoteInclusionProof>, ClientError> {
+    pub async fn get_note_inclusion_proof(
+        &self,
+        note_id: NoteId,
+    ) -> Result<Option<NoteInclusionProof>, ClientError> {
         let result = self.rpc_api.get_note_by_id(note_id).await;
 
         match result {
             Ok(FetchedNote::Private(_, _, proof)) => Ok(Some(proof)),
             Ok(FetchedNote::Public(_, proof)) => Ok(Some(proof)),
             Err(RpcError::NoteNotFound(_)) => Ok(None),
-            Err(err) => Err(ClientError::RpcError(err))
+            Err(err) => Err(ClientError::RpcError(err)),
         }
     }
 }

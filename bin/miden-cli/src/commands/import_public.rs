@@ -1,11 +1,8 @@
+use miden_client::Client;
+use miden_client::account::AccountId;
 
-use miden_client::{
-    Client,
-    account::AccountId,
-};
-use crate::{
-    Parser, errors::CliError,
-};
+use crate::Parser;
+use crate::errors::CliError;
 
 #[derive(Debug, Parser, Clone)]
 #[clap(about = "Import public accounts")]

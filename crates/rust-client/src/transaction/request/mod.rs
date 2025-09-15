@@ -50,7 +50,7 @@ pub enum TransactionScriptTemplate {
     /// depend on the capabilities of the account the transaction request will be applied to.
     /// For example, for Basic Wallets, this may involve invoking `create_note` procedure.
     SendNotes(Vec<PartialNote>),
-    NoAuth
+    NoAuth,
 }
 
 /// Specifies a transaction request that can be executed by an account.
@@ -327,8 +327,7 @@ impl TransactionRequest {
             Some(TransactionScriptTemplate::SendNotes(notes)) => Ok(account_interface
                 .build_send_notes_script(notes, self.expiration_delta, in_debug_mode.into())?),
             Some(TransactionScriptTemplate::NoAuth) => {
-                let empty_script =
-                    ScriptBuilder::default().compile_tx_script("begin nop end")?;
+                let empty_script = ScriptBuilder::default().compile_tx_script("begin nop end")?;
 
                 Ok(empty_script)
             },
@@ -360,7 +359,7 @@ impl Serializable for TransactionRequest {
             },
             Some(TransactionScriptTemplate::NoAuth) => {
                 target.write_u8(3);
-            }
+            },
         }
         self.expected_output_recipients.write_into(target);
         self.expected_future_notes.write_into(target);

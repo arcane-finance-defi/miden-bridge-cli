@@ -5,9 +5,9 @@ use std::str::FromStr;
 
 use figment::value::{Dict, Map};
 use figment::{Metadata, Profile, Provider};
+use miden_client::consts::MIXER_DEFAULT_URL;
 use miden_client::rpc::Endpoint;
 use serde::{Deserialize, Serialize};
-use miden_client::consts::MIXER_DEFAULT_URL;
 
 use crate::errors::CliError;
 
