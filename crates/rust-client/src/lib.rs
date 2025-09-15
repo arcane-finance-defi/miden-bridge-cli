@@ -117,7 +117,7 @@
 
 #[macro_use]
 extern crate alloc;
-use alloc::{boxed::Box, string::String};
+use alloc::boxed::Box;
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -194,7 +194,6 @@ pub mod block {
 pub mod crypto {
     pub use miden_objects::crypto::dsa::rpo_falcon512::SecretKey;
     pub use miden_objects::crypto::hash::rpo::Rpo256;
-    pub use miden_objects::Digest;
     pub use miden_objects::crypto::merkle::{
         InOrderIndex,
         LeafIndex,
@@ -229,18 +228,16 @@ pub mod testing {
 }
 
 use alloc::sync::Arc;
-use alloc::string::String;
 pub use miden_lib::utils::ScriptBuilder;
 use miden_objects::block::BlockNumber;
 use miden_objects::crypto::rand::FeltRng;
 use miden_objects::note::{NoteId, NoteInclusionProof};
 use miden_tx::{
-    auth::TransactionAuthenticator, DataStore, LocalTransactionProver, TransactionExecutor,
+    auth::TransactionAuthenticator, LocalTransactionProver,
 };
 use rand::RngCore;
 use rpc::NodeRpcClient;
-use store::{data_store::ClientDataStore, Store};
-use tracing::info;
+use store::Store;
 use crate::rpc::domain::note::FetchedNote;
 use crate::rpc::RpcError;
 // MIDEN CLIENT

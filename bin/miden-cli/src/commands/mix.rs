@@ -1,17 +1,12 @@
 use clap::Parser;
-use miden_objects::FieldElement;
-use miden_objects::note::{Note, NoteExecutionHint, NoteFile, NoteMetadata, NoteTag, NoteType};
-use miden_objects::utils::{Serializable, ToHex};
-use miden_client::{Client, Felt};
-use miden_client::store::{NoteExportType, NoteFilter};
+use miden_client::Client;
 use crate::crosschain::reconstruct_crosschain_note;
 use crate::errors::CliError;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
+use miden_client::auth::TransactionAuthenticator;
 use crate::config::CliEndpoint;
-use crate::errors::CliError::AccountId;
 use crate::notes::check_note_existence;
-use crate::utils::bridge_note_tag;
 // MIX COMMAND
 // ================================================================================================
 
@@ -62,7 +57,7 @@ struct MixResponse {
 }
 
 impl MixCmd {
-    pub async fn execute(&self, client: &mut Client, mixer_url: CliEndpoint) -> Result<(), CliError> {
+    pub async fn execute<AUTH: TransactionAuthenticator + Sync + 'static>(&self, client: &mut Client<AUTH>, mixer_url: CliEndpoint) -> Result<(), CliError> {
         client.sync_state().await?;
         let (_, note_id) = reconstruct_crosschain_note(
             &self.serial_number,

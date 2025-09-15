@@ -328,7 +328,7 @@ impl TransactionRequest {
                 .build_send_notes_script(notes, self.expiration_delta, in_debug_mode.into())?),
             Some(TransactionScriptTemplate::NoAuth) => {
                 let empty_script =
-                    TransactionScript::compile("begin nop end", TransactionKernel::assembler())?;
+                    ScriptBuilder::default().compile_tx_script("begin nop end")?;
 
                 Ok(empty_script)
             },

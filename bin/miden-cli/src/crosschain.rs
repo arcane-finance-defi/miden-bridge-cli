@@ -1,12 +1,11 @@
 use thiserror::Error;
-use alloy_primitives::hex::FromHex;
 use miden_bridge::accounts::token_wrapper::bridge_note_tag;
 use miden_bridge::notes::bridge::croschain;
 use miden_bridge::utils::{evm_address_to_felts, AddressFormatError};
 use miden_objects::{AccountIdError, AssetError, Felt, FieldElement, NoteError, Word};
 use miden_objects::account::AccountId;
 use miden_objects::asset::FungibleAsset;
-use miden_objects::note::{NoteAssets, NoteDetails, NoteFile, NoteId, NoteInputs, NoteRecipient, NoteTag};
+use miden_objects::note::{NoteAssets, NoteDetails, NoteFile, NoteId, NoteInputs, NoteRecipient};
 use miden_objects::utils::{parse_hex_string_as_word};
 
 
@@ -15,6 +14,7 @@ pub fn build_crosschain_recipient(
     bridge_note_serial_number: Word,
     dest_chain: u32,
     dest_addr: [Felt; 3],
+    unlock_timestamp: Option<u32>,
 ) -> Result<NoteRecipient, NoteError> {
     Ok(NoteRecipient::new(
         serial_number,
@@ -28,6 +28,7 @@ pub fn build_crosschain_recipient(
             dest_addr[2],
             dest_addr[1],
             dest_addr[0],
+            Felt::new(unlock_timestamp.unwrap_or(0) as u64),
             Felt::ZERO,
             Felt::ZERO,
             Felt::ZERO,
@@ -58,11 +59,11 @@ pub async fn reconstruct_crosschain_note(
     faucet_id: &String,
     asset_amount: &u64
 ) -> Result<(NoteFile, NoteId), CrosschainNoteReconstructionError> {
-    let serial_number = parse_hex_string_as_word(serial_number)
-        .map_err(|e| CrosschainNoteReconstructionError::UnparsableHexError(e.to_string()))?;
+    let serial_number = Word::new(parse_hex_string_as_word(serial_number)
+        .map_err(|e| CrosschainNoteReconstructionError::UnparsableHexError(e.to_string()))?);
 
-    let bridge_serial_number = parse_hex_string_as_word(bridge_note_serial_number)
-        .map_err(|e| CrosschainNoteReconstructionError::UnparsableHexError(e.to_string()))?;
+    let bridge_serial_number = Word::new(parse_hex_string_as_word(bridge_note_serial_number)
+        .map_err(|e| CrosschainNoteReconstructionError::UnparsableHexError(e.to_string()))?);
 
     let dest_addr = evm_address_to_felts(dest_address.to_string())?;
 
@@ -72,7 +73,8 @@ pub async fn reconstruct_crosschain_note(
         serial_number,
         bridge_serial_number,
         *dest_chain,
-        dest_addr
+        dest_addr,
+        None
     )?;
 
     let note_details = NoteDetails::new(

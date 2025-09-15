@@ -4,10 +4,11 @@ use std::path::PathBuf;
 use clap::{Parser, ValueEnum};
 use miden_lib::note::utils::build_p2id_recipient;
 use miden_objects::asset::FungibleAsset;
-use miden_objects::{Felt, FieldElement};
+use miden_objects::{Felt, FieldElement, Word};
 use miden_objects::note::{Note, NoteAssets, NoteDetails, NoteExecutionHint, NoteFile, NoteMetadata, NoteType};
 use miden_objects::utils::{parse_hex_string_as_word, Serializable};
 use tracing::{info, warn};
+use miden_client::auth::TransactionAuthenticator;
 use miden_client::Client;
 use crate::crosschain::reconstruct_crosschain_note;
 use crate::errors::CliError;
@@ -72,7 +73,7 @@ pub struct ReconstructCmd {
 }
 
 impl ReconstructCmd {
-    pub async fn execute(&self, client: &mut Client) -> Result<(), CliError> {
+    pub async fn execute<AUTH: TransactionAuthenticator + Sync + 'static>(&self, client: &mut Client<AUTH>) -> Result<(), CliError> {
         client.sync_state().await?;
         let (note_text, note_id) = match self {
             Self {
@@ -85,8 +86,8 @@ impl ReconstructCmd {
             } => {
                 let receiver = parse_account_id(&client, account_id).await?;
                 let faucet_id = parse_account_id(&client, faucet_id).await?;
-                let serial_number = parse_hex_string_as_word(serial_number)
-                    .map_err(|_| CliError::InvalidArgument("serial-number".to_string()))?;
+                let serial_number = Word::new(parse_hex_string_as_word(serial_number)
+                    .map_err(|_| CliError::InvalidArgument("serial-number".to_string()))?);
 
                 let recipient = build_p2id_recipient(receiver, serial_number.clone())
                     .map_err(|e| CliError::Internal(Box::new(e)))?;
@@ -166,7 +167,7 @@ impl ReconstructCmd {
                     filename.clone()
                 } else {
                     let current_dir = std::env::current_dir()?;
-                    current_dir.join(format!("{}.mno", note_id.inner()))
+                    current_dir.join(format!("{}.mno", note_id.to_hex()))
                 };
 
                 info!("Writing file to {}", file_path.to_string_lossy());

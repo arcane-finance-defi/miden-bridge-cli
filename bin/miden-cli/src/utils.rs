@@ -1,10 +1,8 @@
-use std::{fmt, fs::File, io::Write, path::{Path, PathBuf}};
+use std::{fs::File, io::Write, path::{Path, PathBuf}};
 use figment::{
     Figment,
     providers::{Format, Toml},
 };
-use miden_objects::{Felt, StarkField};
-use thiserror::Error;
 use miden_objects::note::NoteTag;
 use miden_client::{Client, account::AccountId};
 use miden_objects::address::Address;
@@ -14,7 +12,6 @@ use super::config::CliConfig;
 use super::{CLIENT_CONFIG_FILE_NAME, get_account_with_id_prefix};
 use crate::errors::CliError;
 use crate::faucet_details_map::FaucetDetailsMap;
-use miden_client::utils::DeserializationError;
 use miden_bridge::notes::BRIDGE_USECASE;
 
 

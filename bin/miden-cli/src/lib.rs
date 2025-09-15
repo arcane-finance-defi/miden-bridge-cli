@@ -11,7 +11,7 @@ use miden_client::builder::ClientBuilder;
 use miden_client::keystore::FilesystemKeyStore;
 use miden_client::store::{NoteFilter as ClientNoteFilter, OutputNoteRecord};
 use miden_client::{Client, DebugMode, IdPrefixFetchError};
-use rand::{Rng, rngs::StdRng};
+use rand::rngs::StdRng;
 use tracing::Level;
 
 mod commands;
@@ -32,7 +32,6 @@ use commands::crosschain::CrosschainCmd;
 use commands::import_public::ImportPublicCmd;
 use commands::mix::MixCmd;
 
-use crate::utils::bridge_note_tag;
 use self::utils::load_config_file;
 
 pub type CliKeyStore = FilesystemKeyStore<StdRng>;
@@ -223,7 +222,7 @@ impl Cli {
                 Box::pin(new_account.execute(client, keystore)).await
             },
             Command::Import(import) => import.execute(client, keystore).await,
-            Command::ImportPublic(import_public) => import_public.execute(client, keystore).await,
+            Command::ImportPublic(import_public) => import_public.execute(client).await,
             Command::Init(_) => Ok(()),
             Command::Info => info::print_client_info(&client).await,
             Command::Notes(notes) => Box::pin(notes.execute(client)).await,

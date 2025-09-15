@@ -29,8 +29,8 @@ pub struct CommittedNoteState {
 impl NoteStateHandler for CommittedNoteState {
     fn inclusion_proof_received(
         &self,
-        inclusion_proof: NoteInclusionProof,
-        metadata: NoteMetadata,
+        _inclusion_proof: NoteInclusionProof,
+        _metadata: NoteMetadata,
     ) -> Result<Option<InputNoteState>, NoteRecordError> {
         Ok(None)
     }
@@ -45,7 +45,7 @@ impl NoteStateHandler for CommittedNoteState {
     fn block_header_received(
         &self,
         _note_id: NoteId,
-        block_header: &BlockHeader,
+        _block_header: &BlockHeader,
     ) -> Result<Option<InputNoteState>, NoteRecordError> {
         Ok(None)
     }

@@ -2,13 +2,11 @@ use std::io;
 use std::sync::Arc;
 
 use clap::{Parser, ValueEnum};
-use miden_bridge::accounts::components::token_wrapper_account_library;
 use miden_client::{
     Client, RemoteTransactionProver,
     account::AccountId,
     auth::TransactionAuthenticator,
     asset::{FungibleAsset, NonFungibleDeltaAction},
-    crypto::Digest,
     note::{BlockNumber, NoteType as MidenNoteType, build_swap_tag, get_input_note_with_id_prefix},
     store::NoteRecordError,
     transaction::{
@@ -16,17 +14,6 @@ use miden_client::{
         TransactionRequestBuilder, TransactionResult,
     },
 };
-use miden_client::store::NoteRecordError;
-use miden_client::transaction::{
-    InputNote,
-    OutputNote,
-    PaymentNoteDescription,
-    SwapTransactionData,
-    TransactionRequest,
-    TransactionRequestBuilder,
-    TransactionResult,
-};
-use miden_client::{Client, RemoteTransactionProver};
 use tracing::info;
 
 use crate::create_dynamic_table;
@@ -390,7 +377,7 @@ impl ConsumeNotesCmd {
 // EXECUTE TRANSACTION
 // ================================================================================================
 
-async fn execute_transaction<AUTH: TransactionAuthenticator + Sync + 'static>(
+pub async fn execute_transaction<AUTH: TransactionAuthenticator + Sync + 'static>(
     client: &mut Client<AUTH>,
     account_id: AccountId,
     transaction_request: TransactionRequest,

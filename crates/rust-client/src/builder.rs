@@ -8,14 +8,13 @@ use miden_tx::ExecutionOptions;
 use miden_tx::auth::TransactionAuthenticator;
 use rand::Rng;
 
-use crate::keystore::FilesystemKeyStore;
 use crate::rpc::NodeRpcClient;
 #[cfg(feature = "tonic")]
 use crate::rpc::{Endpoint, TonicRpcClient};
 use crate::store::Store;
 #[cfg(feature = "sqlite")]
 use crate::store::sqlite_store::SqliteStore;
-use crate::{Client, ClientError, DebugMode, keystore::FilesystemKeyStore, rpc::NodeRpcClient, store::Store};
+use crate::{Client, ClientError, DebugMode, keystore::FilesystemKeyStore};
 use crate::consts::MIXER_DEFAULT_URL;
 
 // CONSTANTS
