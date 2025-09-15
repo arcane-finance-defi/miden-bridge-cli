@@ -5,8 +5,6 @@ extern crate std;
 
 #[tokio::main]
 async fn main() -> miette::Result<()> {
-    tracing_subscriber::fmt::init();
-
     // read command-line args
     let input = <MidenClientCli as clap::CommandFactory>::command();
     let matches = input.get_matches();
