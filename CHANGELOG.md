@@ -1,13 +1,10 @@
 # Changelog
 
-## 0.11.6
+## 0.11.6 (2025-09-16)
 
-* Added `Signature` to the list of exported types in `index.d.ts`([#1303](https://github.com/0xMiden/miden-client/pull/1303))
-
-## 0.11.5
-
-* Added a way to retrieve a secret key in the client given a pub key ([#1293](https://github.com/0xMiden/miden-client/pull/1293))
-* Reexport all authentication components from `miden-lib` ([#1297](https://github.com/0xMiden/miden-client/pull/1297)).
+* Added a way to retrieve a secret key in the client given a pub key ([#1293](https://github.com/0xMiden/miden-client/pull/1293)).
+* Reexported all authentication components from `miden-lib` ([#1297](https://github.com/0xMiden/miden-client/pull/1297)).
+* Added `Signature` to the list of exported types in `index.d.ts`([#1303](https://github.com/0xMiden/miden-client/pull/1303)).
 
 ## 0.11.4 (2025-09-11)
 
