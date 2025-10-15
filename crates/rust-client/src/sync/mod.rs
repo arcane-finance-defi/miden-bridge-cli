@@ -66,6 +66,7 @@ use miden_objects::note::{NoteId, NoteTag};
 use miden_objects::transaction::TransactionId;
 use miden_tx::auth::TransactionAuthenticator;
 use miden_tx::utils::{Deserializable, DeserializationError, Serializable};
+use tracing::info;
 
 use crate::note::NoteScreener;
 use crate::store::{NoteFilter, TransactionFilter};
@@ -137,7 +138,7 @@ where
         let note_tags: BTreeSet<NoteTag> = self.store.get_unique_note_tags().await?;
 
         let unspent_input_notes = self.store.get_input_notes(NoteFilter::Unspent).await?;
-        let unspent_output_notes = self.store.get_output_notes(NoteFilter::Unspent).await?;
+        let unspent_output_notes = self.store.get_output_notes(NoteFilter::Expected).await?;
 
         let uncommitted_transactions =
             self.store.get_transactions(TransactionFilter::Uncommitted).await?;
@@ -158,6 +159,7 @@ where
             .await?;
 
         let sync_summary: SyncSummary = (&state_sync_update).into();
+        info!("Applying changes to the store.");
 
         // Apply received and computed updates to the store
         self.store
@@ -165,10 +167,21 @@ where
             .await
             .map_err(ClientError::StoreError)?;
 
+        info!("Pruning block headers.");
         // Remove irrelevant block headers
         self.store.prune_irrelevant_blocks().await?;
 
         Ok(sync_summary)
+    }
+
+    /// Applies the state sync update to the store.
+    ///
+    /// See [`crate::Store::apply_state_sync()`] for what the update implies.
+    pub async fn apply_state_sync(&mut self, update: StateSyncUpdate) -> Result<(), ClientError> {
+        self.store.apply_state_sync(update).await.map_err(ClientError::StoreError)?;
+
+        // Remove irrelevant block headers
+        self.store.prune_irrelevant_blocks().await.map_err(ClientError::StoreError)
     }
 }
 
