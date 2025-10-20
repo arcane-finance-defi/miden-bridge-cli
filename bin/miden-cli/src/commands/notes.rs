@@ -1,5 +1,6 @@
 use clap::ValueEnum;
 use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets};
+use miden_bridge::notes::bridge::croschain;
 use miden_client::asset::Asset;
 use miden_client::auth::TransactionAuthenticator;
 use miden_client::note::{
@@ -10,8 +11,8 @@ use miden_client::note::{
     get_input_note_with_id_prefix,
 };
 use miden_client::store::{InputNoteRecord, NoteFilter as ClientNoteFilter, OutputNoteRecord};
-use miden_client::{Client, ClientError, IdPrefixFetchError};
-use miden_objects::PrettyPrint;
+use miden_client::{Client, ClientError, IdPrefixFetchError, Word};
+use miden_objects::{Felt, PrettyPrint};
 
 use crate::errors::CliError;
 use crate::utils::{load_faucet_details_map, parse_account_id};
@@ -186,6 +187,8 @@ async fn show_note<AUTH: TransactionAuthenticator + Sync>(
     } = note_summary(input_note_record.as_ref(), output_note_record.as_ref());
     table.add_row(vec![Cell::new("ID"), Cell::new(id)]);
 
+    let mut crosschain_bridge_serial_num: Option<Word> = None;
+
     match script_root {
         ref p2id_root if p2id_root == &WellKnownNote::P2ID.script_root().to_string() => {
             script_root += " (P2ID)";
@@ -196,6 +199,18 @@ async fn show_note<AUTH: TransactionAuthenticator + Sync>(
         ref swap_root if swap_root == &WellKnownNote::SWAP.script_root().to_string() => {
             script_root += " (SWAP)";
         },
+        ref crosschain_root if crosschain_root == &croschain().root().to_string() => {
+            script_root += " (CROSSCHAIN)";
+            let mut bridge_seq_num_felts = output_note_record.clone().unwrap().recipient()
+                .unwrap()
+                .inputs().values()[0..4].to_vec();
+            bridge_seq_num_felts.reverse();
+            crosschain_bridge_serial_num = Some(
+                Word::try_from(bridge_seq_num_felts.as_slice())
+                    .map_err(|_| CliError::InvalidArgument("Unable to deserialize the CROSSCHAIN bridge serial number"
+                        .to_string()))?
+            );
+        }
         _ => {},
     }
 
@@ -203,6 +218,11 @@ async fn show_note<AUTH: TransactionAuthenticator + Sync>(
     table.add_row(vec![Cell::new("Assets Commitment"), Cell::new(assets_commitment)]);
     table.add_row(vec![Cell::new("Inputs Commitment"), Cell::new(inputs_commitment)]);
     table.add_row(vec![Cell::new("Serial Number"), Cell::new(serial_num)]);
+    if crosschain_bridge_serial_num.is_some() {
+        table.add_row(vec![Cell::new("Bridge Serial Number"), Cell::new(
+            crosschain_bridge_serial_num.unwrap().to_hex())
+        ]);
+    }
     table.add_row(vec![Cell::new("Type"), Cell::new(note_type)]);
     table.add_row(vec![Cell::new("State"), Cell::new(state)]);
     table.add_row(vec![Cell::new("Tag"), Cell::new(tag)]);
