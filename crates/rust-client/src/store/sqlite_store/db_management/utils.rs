@@ -57,7 +57,11 @@ macro_rules! insert_sql {
 
 type Hash = Blake3Digest<20>;
 
-const MIGRATION_SCRIPTS: [&str; 1] = [include_str!("../store.sql")];
+const MIGRATION_SCRIPTS: [&str; 3] = [
+    include_str!("../store.sql"),
+    include_str!("./migrations/001_schema_updates.sql"),
+    include_str!("./migrations/002_index_updates.sql"),
+];
 static MIGRATION_HASHES: LazyLock<Vec<Hash>> = LazyLock::new(compute_migration_hashes);
 static MIGRATIONS: LazyLock<Migrations> = LazyLock::new(prepare_migrations);
 
@@ -66,7 +70,6 @@ fn up(s: &'static str) -> M<'static> {
 }
 
 const DB_MIGRATION_HASH_FIELD: &str = "db-migration-hash";
-const DB_SCHEMA_VERSION_FIELD: &str = "db-schema-version";
 
 /// Applies the migrations to the database.
 pub fn apply_migrations(conn: &mut Connection) -> Result<(), SqliteStoreError> {
@@ -75,17 +78,6 @@ pub fn apply_migrations(conn: &mut Connection) -> Result<(), SqliteStoreError> {
     if let SchemaVersion::Inside(ver) = version_before {
         if !table_exists(&conn.transaction()?, "settings")? {
             return Err(SqliteStoreError::MissingSettingsTable);
-        }
-
-        let last_schema_version: usize = get_settings_value(conn, DB_SCHEMA_VERSION_FIELD)?
-            .ok_or_else(|| {
-                SqliteStoreError::DatabaseError("Schema version not found".to_string())
-            })?;
-
-        let current_schema_version = schema_version(conn)?;
-
-        if last_schema_version != current_schema_version {
-            return Err(SqliteStoreError::SchemaVersionMismatch);
         }
 
         let expected_hash = &*MIGRATION_HASHES[ver.get() - 1];
@@ -104,13 +96,12 @@ pub fn apply_migrations(conn: &mut Connection) -> Result<(), SqliteStoreError> {
 
     let version_after = MIGRATIONS.current_version(conn)?;
 
-    if version_before != version_after {
-        let new_hash = hex::encode(&*MIGRATION_HASHES[MIGRATION_HASHES.len() - 1]);
+    if version_before != version_after
+        && let SchemaVersion::Inside(new_ver) = version_after
+    {
+        let new_hash = hex::encode(&*MIGRATION_HASHES[new_ver.get() - 1]);
         set_settings_value(conn, DB_MIGRATION_HASH_FIELD, &new_hash)?;
     }
-
-    let new_schema_version = schema_version(conn)?;
-    set_settings_value(conn, DB_SCHEMA_VERSION_FIELD, &new_schema_version)?;
 
     Ok(())
 }
@@ -166,11 +157,4 @@ pub fn table_exists(transaction: &Transaction, table_name: &str) -> rusqlite::Re
         )
         .optional()?
         .is_some())
-}
-
-/// Returns the schema version of the database.
-pub fn schema_version(connection: &mut Connection) -> rusqlite::Result<usize> {
-    connection
-        .transaction()?
-        .query_row("SELECT * FROM pragma_schema_version", [], |row| row.get(0))
 }

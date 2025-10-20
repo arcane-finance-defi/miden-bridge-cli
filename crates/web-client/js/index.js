@@ -59,6 +59,7 @@ const {
   SecretKey,
   Signature,
   SigningInputs,
+  SigningInputsType,
   SlotAndKeys,
   SlotAndKeysArray,
   StorageMap,
@@ -74,6 +75,7 @@ const {
   TransactionScript,
   TransactionScriptInputPair,
   TransactionScriptInputPairArray,
+  TransactionSummary,
   Word,
   WebClient: WasmWebClient, // Alias the WASM-exported WebClient
   readNoteScriptFromBytes,
@@ -136,6 +138,7 @@ export {
   SecretKey,
   Signature,
   SigningInputs,
+  SigningInputsType,
   SlotAndKeys,
   SlotAndKeysArray,
   StorageMap,
@@ -151,6 +154,7 @@ export {
   TransactionScript,
   TransactionScriptInputPair,
   TransactionScriptInputPairArray,
+  TransactionSummary,
   Word,
   readNoteScriptFromBytes
 };

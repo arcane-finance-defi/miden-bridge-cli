@@ -1,8 +1,33 @@
 # Changelog
 
-## 0.11.5
+## 0.11.11 (2025-10-16)
 
-* Added a way to retrieve a secret key in the client given a pub key ([#1293](https://github.com/0xMiden/miden-client/pull/1293))
+* Added Missing Details to `SigningInputs` Object to Fetch Underlying Data Type ([#1389](https://github.com/0xMiden/miden-client/pull/1389)).
+
+## 0.11.10 (2025-10-15)
+
+* Optimized sync-related lookups and RPC requests ([#1387](https://github.com/0xMiden/miden-client/pull/1387)).
+
+## 0.11.9 (2025-10-08)
+
+* Fixed a bug where StateSync failed when called multiple times while using Safari ([#1377](https://github.com/0xMiden/miden-client/pull/1377)).
+* Implemented new note compatibility checker [(#1376)](https://github.com/0xMiden/miden-client/pull/1376).
+* Added indexes to improve sync process performance [(#1363)](https://github.com/0xMiden/miden-client/pull/1363).
+
+## 0.11.8 (2025-09-29)
+
+* Added `serialize` and `deserialize` methods for `NoteScript` [(#1117)](https://github.com/0xMiden/miden-client/pull/1117).
+
+## 0.11.7 (2025-09-26)
+
+* Fixed an issue where `AccountId` was being left as null-pointer ([#1340](https://github.com/0xMiden/miden-client/pull/1340)).
+
+## 0.11.6 (2025-09-18)
+
+* Added a way to retrieve a secret key in the client given a pub key ([#1293](https://github.com/0xMiden/miden-client/pull/1293)).
+* Reexported all authentication components from `miden-lib` ([#1297](https://github.com/0xMiden/miden-client/pull/1297)).
+* Added `Signature` to the list of exported types in `index.d.ts`([#1303](https://github.com/0xMiden/miden-client/pull/1303)).
+* Patched `miden-base` dependencies to 0.11.4 ([#1314](https://github.com/0xMiden/miden-client/pull/1314)).
 
 ## 0.11.4 (2025-09-11)
 
